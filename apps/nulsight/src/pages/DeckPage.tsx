@@ -60,6 +60,37 @@ function validateImportedDeck(deck: string[]) {
   return ''
 }
 
+function renderDeckCard(def: CardDef | undefined, key: string, options?: { count?: number; compact?: boolean }) {
+  const normalizedKey = normalizeCardKey(key)
+  const type = def?.type === 'monster' ? '유닛' : '마법'
+  const footer = def?.type === 'monster'
+    ? `${def?.atk ?? '-'} / ${def?.hp ?? '-'}`
+    : spellKindLabel(def?.spellKind)
+  const meta = [def?.race, def?.theme, def?.element].filter(Boolean).join(' · ')
+  const effect = normalizeEffectText(def?.effect || '') || '효과 없음'
+
+  return (
+    <div className={`deck-card-surface${options?.compact ? ' deck-card-surface--compact' : ''}`}>
+      <div className={`bp-card ${def?.type === 'monster' ? 'bp-card--unit' : 'bp-card--spell'}`}>
+        <div className="bp-card__chrome" />
+        <div className="bp-card__head">
+          <span className="bp-card__cost">{def?.cost ?? '-'}</span>
+          <span className="bp-card__type">{type}</span>
+        </div>
+        <div className="bp-card__body">
+          <div className="bp-card__name">{def?.name || normalizedKey}</div>
+          <div className={`bp-card__meta${meta ? '' : ' bp-card__meta--empty'}`}>{meta || '분류 없음'}</div>
+          <div className="bp-card__text">{effect}</div>
+        </div>
+        <div className="bp-card__foot">
+          <span className="bp-card__footer">{footer}</span>
+          {typeof options?.count === 'number' ? <span className="bp-card__footer">x{options.count}</span> : null}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function DeckPage() {
   const navigate = useNavigate()
   const shared = getSharedCardsGlobal()
@@ -496,21 +527,16 @@ export function DeckPage() {
 
               return (
                 <article className="deck-card" key={key}>
-                  <div className="deck-card__top">
-                    <b>{card?.name || key}</b>
-                    <span className="deck-card__count">x{count}</span>
-                  </div>
-                  <div className="muted">
-                    비용 {card?.cost ?? '-'} · {typeLabel} · {stat}
-                  </div>
+                  {renderDeckCard(card, key, { count })}
                   <div className="deck-card__meta">
+                    <span className="deck-chip">{typeLabel}</span>
+                    <span className="deck-chip">{stat}</span>
                     {chips.map((chip) => (
                       <span className="deck-chip" key={chip}>
                         {chip}
                       </span>
                     ))}
                   </div>
-                  <div className="deck-card__effect">{normalizeEffectText(card?.effect || '') || '효과 없음'}</div>
                   <div className="deck-card__actions">
                     <button className="ghost nulsight-button" type="button" onClick={() => removeCard(key)}>
                       -1
@@ -544,14 +570,10 @@ export function DeckPage() {
                 return (
                   <article className="deck-line deck-line--card" key={key}>
                     <div className="deck-line__main">
-                      <div className="deck-line__top">
-                        <strong>{card?.name || key}</strong>
-                        <b>x{count}</b>
-                      </div>
-                      <small className="muted">
-                        비용 {card?.cost ?? '-'} · {card?.type === 'monster' ? '유닛' : '마법'} · {stat}
+                      {renderDeckCard(card, key, { count, compact: true })}
+                      <small className="muted deck-line__chips">
+                        {[card?.type === 'monster' ? '유닛' : '마법', stat, ...chips].filter(Boolean).join(' · ')}
                       </small>
-                      {chips.length ? <small className="muted deck-line__chips">{chips.join(' · ')}</small> : null}
                     </div>
                   </article>
                 )

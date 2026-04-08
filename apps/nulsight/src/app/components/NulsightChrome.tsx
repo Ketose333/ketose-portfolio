@@ -15,6 +15,7 @@ export function NulsightChrome({ children }: PropsWithChildren) {
   const location = useLocation()
   const navigate = useNavigate()
   const [authUser, setAuthUser] = useState<AuthResponse['user'] | null>(null)
+  const isGameRoute = location.pathname === '/game'
 
   useEffect(() => {
     let cancelled = false
@@ -53,6 +54,14 @@ export function NulsightChrome({ children }: PropsWithChildren) {
 
     setAuthUser(null)
     navigate('/login', { replace: true })
+  }
+
+  if (isGameRoute) {
+    return (
+      <div className="nulsight-app-shell nulsight-app-shell--game">
+        <div className="nulsight-app-shell__content nulsight-app-shell__content--game">{children}</div>
+      </div>
+    )
   }
 
   return (

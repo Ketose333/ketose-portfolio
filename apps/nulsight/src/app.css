@@ -29,6 +29,10 @@ body {
   flex-direction: column;
 }
 
+.nulsight-app-shell__content--game {
+  min-height: 100dvh;
+}
+
 .bp-header__nav {
   display: flex;
   flex-wrap: wrap;
@@ -196,7 +200,21 @@ body {
 }
 
 .nulsight-shell--game {
-  width: min(1240px, calc(100vw - 40px));
+  width: min(1180px, calc(100vw - 40px));
+  min-height: 100dvh;
+  padding-top: 20px;
+  padding-bottom: 28px;
+}
+
+@media (min-height: 860px) {
+  .nulsight-shell--game {
+    display: grid;
+    align-content: center;
+  }
+}
+
+body.nulsight-game-overlay-open {
+  overflow: hidden;
 }
 
 .nulsight-form,

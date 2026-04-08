@@ -42,6 +42,16 @@
   const getCardType = S.getCardType || (() => 'spell');
   const SESSION = globalThis.BP_GAME_SESSION || {};
   const FORMAT = globalThis.BP_GAME_FORMAT || {};
+  const pushHudState = (payload) => {
+    try {
+      globalThis.BP_NULSIGHT_GAME?.setHudState?.(payload);
+    } catch {}
+  };
+  const pushSurfaceState = (payload) => {
+    try {
+      globalThis.BP_NULSIGHT_GAME?.setSurfaceState?.(payload);
+    } catch {}
+  };
 
   const ROOM_KEY = SESSION.ROOM_KEY || 'bp_last_room_id';
   const AGENT_KEY = SESSION.AGENT_KEY || 'bp_last_agent_id';
@@ -240,19 +250,20 @@
   }
 
   function closeEffectPickOverlay(commit = false, picks = null) {
-    const overlay = $('effectPickOverlay');
-    if (overlay) overlay.classList.add('hidden');
+    pushSurfaceState({ effectPickVisible: false, effectPickCards: [] });
+    if (globalThis.BP_NULSIGHT_GAME?.pickEffectIndex) {
+      delete globalThis.BP_NULSIGHT_GAME.pickEffectIndex;
+    }
     const done = effectPickResolver;
     effectPickResolver = null;
     if (typeof done === 'function') done(commit ? (Array.isArray(picks) ? picks : []) : null);
   }
 
   async function pickCardsFromOverlay(title, candidates = [], count = 1) {
-    const overlay = $('effectPickOverlay');
     const titleEl = $('effectPickTitle');
     const guideEl = $('effectPickGuide');
     const listEl = $('effectPickList');
-    if (!overlay || !titleEl || !guideEl || !listEl) return null;
+    if (!titleEl || !guideEl || !listEl) return null;
 
     const picks = [];
     let pool = [...candidates];
@@ -261,18 +272,23 @@
       effectPickResolver = resolve;
 
       const render = () => {
+        const guideText = `카드를 눌러 선택해줘. (${picks.length}/${count})`;
+        pushSurfaceState({
+          effectPickVisible: true,
+          effectPickTitle: title,
+          effectPickGuide: guideText,
+          effectPickCards: pool.map((k, idx) => buildOverlayCardState({
+            key: k,
+            index: idx,
+            className: 'effect-pick-overlay__item'
+          }))
+        });
         titleEl.textContent = title;
-        guideEl.textContent = `카드를 눌러 선택해줘. (${picks.length}/${count})`;
-
-        listEl.innerHTML = pool.map((k, idx) => renderCardButton({
-          key: k,
-          className: 'effect-pick-overlay__item',
-          attrs: ` data-pick-index="${idx}" data-inspect-key="${esc(k)}"`
-        })).join('') || '<div class="muted">선택 가능한 카드가 없어요.</div>';
-
-        listEl.querySelectorAll('[data-pick-index]').forEach((btn) => {
-          btn.addEventListener('click', () => {
-            const idx = Number(btn.getAttribute('data-pick-index'));
+        guideEl.textContent = guideText;
+        listEl.innerHTML = '';
+        globalThis.BP_NULSIGHT_GAME = {
+          ...(globalThis.BP_NULSIGHT_GAME || {}),
+          pickEffectIndex: (idx) => {
             if (!Number.isInteger(idx) || idx < 0 || idx >= pool.length) return;
             picks.push(pool[idx]);
             pool.splice(idx, 1);
@@ -281,12 +297,11 @@
               return;
             }
             render();
-          });
-        });
+          }
+        };
       };
 
       render();
-      overlay.classList.remove('hidden');
     });
   }
 
@@ -389,6 +404,16 @@
     return actorLabel(winnerId);
   }
 
+  function phaseAdvanceLabel(phase) {
+    const map = {
+      draw: '메인으로',
+      main: '배틀로',
+      battle: '엔드로',
+      end: '턴 종료'
+    };
+    return map[String(phase || '')] || 'Phase 진행';
+  }
+
   function renderCardContent({ key = null, unit = null, hand = false } = {}) {
     if (CARD_RENDER?.renderCardContent) return CARD_RENDER.renderCardContent({ key, unit, hand });
     const baseKey = key || unit?.key || null;
@@ -468,14 +493,8 @@
     const key = normalizeCardKey(cardKey);
     const def = cardDefByKey(key);
     if (!def) return;
-    const overlay = $('cardInspectOverlay');
-    const preview = $('cardOverlayPreview');
-    const meta = $('cardOverlayMeta');
-    const keywords = $('cardOverlayKeywords');
-    if (!overlay || !preview || !meta || !keywords) return;
-
-    preview.innerHTML = renderCardButton({ key, className: 'card-overlay__card' });
-    meta.innerHTML = `
+    const previewHtml = `<div class="card-overlay__preview-card">${renderCardContent({ key })}</div>`;
+    const metaHtml = `
       <div class="card-overlay__title">${esc(def.name || key)}</div>
       <div class="card-overlay__line">종류: ${esc(getCardType(key) === 'monster' ? '유닛' : '마법')}</div>
       <div class="card-overlay__line">코스트: ${esc(def.cost ?? 0)}</div>
@@ -483,11 +502,16 @@
     `;
 
     const list = cardKeywords(def);
-    keywords.innerHTML = list.length
+    const keywordsHtml = list.length
       ? list.map((kw) => `<div class="card-overlay__kw"><strong>${esc(kw)}</strong><span>${esc(keywordDescription(kw, def))}</span></div>`).join('')
       : '<div class="muted">키워드가 없어요.</div>';
 
-    overlay.classList.remove('hidden');
+    pushSurfaceState({
+      cardOverlayVisible: true,
+      cardOverlayPreviewHtml: previewHtml,
+      cardOverlayMetaHtml: metaHtml,
+      cardOverlayKeywordsHtml: keywordsHtml
+    });
   }
 
   function openCardOverlayByUnit(unitId) {
@@ -497,7 +521,12 @@
   }
 
   function closeCardOverlay() {
-    $('cardInspectOverlay')?.classList.add('hidden');
+    pushSurfaceState({
+      cardOverlayVisible: false,
+      cardOverlayPreviewHtml: '',
+      cardOverlayMetaHtml: '',
+      cardOverlayKeywordsHtml: ''
+    });
   }
 
 
@@ -506,15 +535,17 @@
     className = '',
     style = '',
     attrs = '',
-    onClick = ''
+    onClick = '',
+    onDoubleClick = ''
   } = {}) {
     if (CARD_RENDER?.renderCardButton) {
-      return CARD_RENDER.renderCardButton({ key, className, style, attrs, onClick });
+      return CARD_RENDER.renderCardButton({ key, className, style, attrs, onClick, onDoubleClick });
     }
     const cls = `hand-card ${className}`.trim();
     const styleAttr = style ? ` style="${style}"` : '';
     const clickAttr = onClick ? ` onclick="${onClick}"` : '';
-    return `<button class="${cls}" type="button"${styleAttr}${attrs}${clickAttr}>${renderCardContent({ key, hand: true })}</button>`;
+    const dblClickAttr = onDoubleClick ? ` ondblclick="${onDoubleClick}"` : '';
+    return `<button class="${cls}" type="button"${styleAttr}${attrs}${clickAttr}${dblClickAttr}>${renderCardContent({ key, hand: true })}</button>`;
   }
 
   function selectionText(meAgent) {
@@ -544,13 +575,7 @@
 
 
   function setActionButtonsDisabled(disabled) {
-    for (const id of ['btnEnd', 'btnStack', 'btnConcede', 'oppAttackPanel']) {
-      const el = $(id);
-      if (el) {
-        if (disabled) el.setAttribute('disabled', 'disabled');
-        else el.removeAttribute('disabled');
-      }
-    }
+    pushSurfaceState({ uiLocked: !!disabled });
   }
 
   function beginUiBusy(message = '처리 중이에요') {
@@ -567,9 +592,53 @@
     }
   }
 
-  function slot(html, click, fn, extra = '', dataAttrs = '') {
+  function slot(html, click, fn, extra = '', dataAttrs = '', onDoubleClick = '') {
     const cls = `slot ${click ? 'clickable' : ''} ${extra}`.trim();
-    return `<button class="${cls}" type="button" ${fn ? `onclick="${fn}"` : ''}${dataAttrs}>${html}</button>`;
+    const dblClickAttr = onDoubleClick ? ` ondblclick="${onDoubleClick}"` : '';
+    return `<button class="${cls}" type="button" ${fn ? `onclick="${fn}"` : ''}${dblClickAttr}${dataAttrs}>${html}</button>`;
+  }
+
+  function buildSlotState({
+    key,
+    html,
+    clickable = false,
+    extraClass = '',
+    actionName = '',
+    actionArg = null,
+    inspectKey = '',
+    inspectUnit = '',
+    doubleActionName = '',
+    doubleActionArg = null
+  } = {}) {
+    return {
+      key: key || `${Date.now()}-${Math.random()}`,
+      html,
+      className: `slot ${clickable ? 'clickable' : ''} ${extraClass}`.trim(),
+      inspectKey: inspectKey || '',
+      inspectUnit: inspectUnit || '',
+      action: actionName ? { name: actionName, arg: actionArg } : undefined,
+      doubleAction: doubleActionName ? { name: doubleActionName, arg: doubleActionArg } : undefined
+    };
+  }
+
+  function buildHandCardState({ key, index, selected = false } = {}) {
+    return {
+      key: `${normalizeCardKey(key)}-${index}`,
+      cardKey: normalizeCardKey(key),
+      index,
+      className: `hand-card ${selected ? 'sel' : ''}`.trim(),
+      html: renderCardContent({ key, hand: true })
+    };
+  }
+
+  function buildOverlayCardState({ key, index = null, className = '' } = {}) {
+    return {
+      key: `${normalizeCardKey(key)}-${index ?? 'overlay'}`,
+      cardKey: normalizeCardKey(key),
+      className,
+      html: renderCardContent({ key, hand: true }),
+      pickIndex: Number.isInteger(index) ? index : undefined
+    };
   }
 
   function showPhaseFx(text) {
@@ -676,12 +745,6 @@
       lastPhaseKey = phaseKey;
     }
 
-    const turnEl = $('turnBanner');
-    if (turnEl) {
-      turnEl.className = `hud-turn ${myTurn ? 'is-me' : 'is-opp'}`;
-      turnEl.textContent = `${displayName(game.activeAgentId)} 턴 · Turn ${game.turn}`;
-    }
-
     const boardEl = document.querySelector('.board');
     if (boardEl) {
       const myZone = boardEl.querySelector('.zone-block.me');
@@ -693,32 +756,25 @@
       oppZone?.classList.toggle('is-waiting-turn', !!activeIsMe);
     }
 
-    const phaseEl = $('phaseBadge');
-    if (phaseEl) phaseEl.textContent = phaseLabel(game.phase);
+    const hudNotice = isSpectator
+      ? '관전 모드: 액션을 할 수 없어요.'
+      : (myPriority
+        ? '우선권이 있어요. 패스하거나 대응할 수 있어요.'
+        : (myTurn ? '행동할 수 있어요.' : `${displayName(game.activeAgentId)} 턴을 기다리는 중이에요.`));
+    pushHudState({
+      turnText: `${displayName(game.activeAgentId)} 턴 · Turn ${game.turn}`,
+      turnTone: myTurn ? 'me' : 'opp',
+      phaseText: phaseLabel(game.phase),
+      focusText: selectionText(meAgent),
+      noticeText: hudNotice,
+      badges: [
+        `Stack ${game.stack?.length || 0}`,
+        `우선권 ${displayName(priorityHolder)}`,
+        ...(game.winnerId ? [`승자 ${winnerLabel(game.winnerId)}`] : [])
+      ]
+    });
 
-    const meta = $('metaBadges');
-    if (meta) {
-      meta.innerHTML = [
-        `<span class="badge">Stack ${game.stack?.length || 0}</span>`,
-        `<span class="badge">우선권 ${displayName(priorityHolder)}</span>`,
-        game.winnerId ? `<span class="badge">승자 ${winnerLabel(game.winnerId)}</span>` : ''
-      ].join('');
-    }
-
-    const focus = $('focusChip');
-    if (focus) focus.textContent = selectionText(meAgent);
-
-    const selectedInfo = $('selectedInfo');
-    if (selectedInfo) {
-      const base = isSpectator
-        ? '관전 모드: 액션을 할 수 없어요.'
-        : (myPriority
-          ? '우선권이 있어요. 패스하거나 대응할 수 있어요.'
-          : (myTurn ? '행동할 수 있어요.' : `${displayName(game.activeAgentId)} 턴을 기다리는 중이에요.`));
-      selectedInfo.textContent = base;
-    }
-
-    $('myMon').innerHTML = (meAgent?.monsterZone || [null, null, null]).map((v, i) => {
+    const myMonsterSlots = (meAgent?.monsterZone || [null, null, null]).map((v, i) => {
       const u = v ? game?.units?.[v] : null;
       const selectedKey = selectedHand !== null ? meAgent?.hand?.[selectedHand] : null;
       const selectedDef = selectedKey ? cardDefByKey(selectedKey) : null;
@@ -737,130 +793,138 @@
         v && selectedAttacker === v ? 'attacker-picked' : '',
         v && u?.exhausted ? 'exhausted' : ''
       ].filter(Boolean).join(' ');
-      const inspectAttr = v ? ` data-inspect-unit="${esc(v)}"` : '';
-      return slot(renderCardContent({ unit: u }), click, fn, extra, inspectAttr);
-    }).join('');
+      return buildSlotState({
+        key: `my-mon-${v || i}`,
+        html: renderCardContent({ unit: u }),
+        clickable: click,
+        extraClass: extra,
+        actionName: canSelectAttacker
+          ? 'selectAttacker'
+          : (canDeploy ? 'placeSelectedToMonster' : ((canEquipTarget || canFieldTarget) ? 'selectSpellTarget' : '')),
+        actionArg: click ? i : null,
+        inspectUnit: v || '',
+        doubleActionName: v ? 'openCardOverlayByUnit' : '',
+        doubleActionArg: v || null
+      });
+    });
 
-    $('oppMon').innerHTML = (opp?.monsterZone || [null, null, null]).map((v, i) => {
+    const oppMonsterSlots = (opp?.monsterZone || [null, null, null]).map((v, i) => {
       const targetSpec = getPendingUnitTargetSpec();
       const canAttackTarget = !!(selectedAttacker && myTurn && game.phase === 'battle' && v);
       const canFieldTarget = !!(v && targetSpec && (targetSpec.side === 'enemy' || targetSpec.side === 'any') && myTurn && game.phase === 'main');
       const canTarget = canAttackTarget || canFieldTarget;
       const u = v ? game?.units?.[v] : null;
-      const fn = canAttackTarget ? `attackOpponentUnit(${i})` : (canFieldTarget ? `selectOpponentFieldTarget(${i})` : '');
       const extra = [
         v && canFieldTarget ? 'targetable' : '',
         v && selectedSpellTarget === v ? 'target-picked' : ''
       ].filter(Boolean).join(' ');
-      const inspectAttr = v ? ` data-inspect-unit="${esc(v)}"` : '';
-      return slot(renderCardContent({ unit: u }), canTarget, fn, extra, inspectAttr);
-    }).join('');
+      return buildSlotState({
+        key: `opp-mon-${v || i}`,
+        html: renderCardContent({ unit: u }),
+        clickable: canTarget,
+        extraClass: extra,
+        actionName: canAttackTarget ? 'attackOpponentUnit' : (canFieldTarget ? 'selectOpponentFieldTarget' : ''),
+        actionArg: canTarget ? i : null,
+        inspectUnit: v || '',
+        doubleActionName: v ? 'openCardOverlayByUnit' : '',
+        doubleActionArg: v || null
+      });
+    });
 
-    $('mySpell').innerHTML = (meAgent?.spellZone || [null, null, null, null]).map((v, i) => {
+    const mySpellSlots = (meAgent?.spellZone || [null, null, null, null]).map((v, i) => {
       const canDeploy = selectedHand !== null && !v && getCardType(meAgent?.hand?.[selectedHand]) === 'spell' && myTurn && game.phase === 'main';
       const spellKey = spellSlotKey(v);
-      const fn = canDeploy ? `placeSelectedToSpell(${i})` : '';
-      const inspectAttr = spellKey ? ` data-inspect-key="${esc(spellKey)}"` : '';
-      return slot(renderCardContent({ key: spellKey }), canDeploy, fn, '', inspectAttr);
-    }).join('');
+      return buildSlotState({
+        key: `my-spell-${spellKey || i}`,
+        html: renderCardContent({ key: spellKey }),
+        clickable: canDeploy,
+        actionName: canDeploy ? 'placeSelectedToSpell' : '',
+        actionArg: canDeploy ? i : null,
+        inspectKey: spellKey || '',
+        doubleActionName: spellKey ? 'openCardOverlayByKey' : '',
+        doubleActionArg: spellKey || null
+      });
+    });
 
-    $('oppSpell').innerHTML = (opp?.spellZone || [null, null, null, null]).map((v) => {
+    const oppSpellSlots = (opp?.spellZone || [null, null, null, null]).map((v, i) => {
       const spellKey = spellSlotKey(v);
-      const inspectAttr = spellKey ? ` data-inspect-key="${esc(spellKey)}"` : '';
-      return slot(renderCardContent({ key: spellKey }), false, '', '', inspectAttr);
-    }).join('');
+      return buildSlotState({
+        key: `opp-spell-${spellKey || i}`,
+        html: renderCardContent({ key: spellKey }),
+        inspectKey: spellKey || '',
+        doubleActionName: spellKey ? 'openCardOverlayByKey' : '',
+        doubleActionArg: spellKey || null
+      });
+    });
 
     const myDeckLeft = Array.isArray(meAgent?.deck) ? meAgent.deck.length : '-';
     const oppDeckLeft = Array.isArray(opp?.deck) ? opp.deck.length : '-';
     const myHandCount = Array.isArray(meAgent?.hand) ? meAgent.hand.length : '-';
     const oppHandCount = Array.isArray(opp?.hand) ? opp.hand.length : '-';
-    $('mySide').innerHTML = `
-      <div class="stat-box stat-hp" aria-label="내 체력">
-        <div class="stat-label">체력</div>
-        <div class="stat-value">${meAgent?.hp ?? '-'}</div>
-      </div>
-      <div class="stat-box stat-mana" aria-label="내 마나">
-        <div class="stat-label">마나</div>
-        <div class="stat-value">${meAgent?.mana ?? '-'}/${meAgent?.manaMax ?? '-'}</div>
-      </div>
-      <div class="stat-box" aria-label="내 손패">
-        <div class="stat-label">손패</div>
-        <div class="stat-value">${myHandCount}</div>
-      </div>
-    `;
-    $('oppSide').innerHTML = `
-      <div class="stat-box stat-hp" aria-label="상대 체력">
-        <div class="stat-label">체력</div>
-        <div class="stat-value">${opp?.hp ?? '-'}</div>
-      </div>
-      <div class="stat-box stat-mana" aria-label="상대 마나">
-        <div class="stat-label">마나</div>
-        <div class="stat-value">${opp?.mana ?? '-'}/${opp?.manaMax ?? '-'}</div>
-      </div>
-      <div class="stat-box" aria-label="상대 손패">
-        <div class="stat-label">손패</div>
-        <div class="stat-value">${oppHandCount}</div>
-      </div>
-    `;
 
     const myGrave = meAgent?.graveyard || [];
     const oppGrave = opp?.graveyard || [];
-    const myDeckEl = $('myDeck');
-    if (myDeckEl) myDeckEl.textContent = `덱 ${myDeckLeft}`;
-    const oppDeckEl = $('oppDeck');
-    if (oppDeckEl) oppDeckEl.textContent = `덱 ${oppDeckLeft}`;
-    const myGraveEl = $('myGrave');
-    if (myGraveEl) myGraveEl.textContent = `무덤 ${myGrave.length}`;
-    const oppGraveEl = $('oppGrave');
-    if (oppGraveEl) oppGraveEl.textContent = `무덤 ${oppGrave.length}`;
+    pushSurfaceState({
+      myDeckText: `덱 ${myDeckLeft}`,
+      oppDeckText: `덱 ${oppDeckLeft}`,
+      myGraveText: `무덤 ${myGrave.length}`,
+      oppGraveText: `무덤 ${oppGrave.length}`,
+      mySummary: {
+        hp: String(meAgent?.hp ?? '-'),
+        mana: `${meAgent?.mana ?? '-'}/${meAgent?.manaMax ?? '-'}`,
+        hand: String(myHandCount)
+      },
+      oppSummary: {
+        hp: String(opp?.hp ?? '-'),
+        mana: `${opp?.mana ?? '-'}/${opp?.manaMax ?? '-'}`,
+        hand: String(oppHandCount)
+      },
+      myMonsterSlots,
+      oppMonsterSlots,
+      mySpellSlots,
+      oppSpellSlots
+    });
 
     if (!isSpectator) {
       const handCards = meAgent?.hand || [];
       const handEl = $('hand');
       const overlap = getHandOverlapPx(handCards.length, handEl?.clientWidth || 0);
-      handEl.style.setProperty('--hand-overlap', `${overlap}px`);
-      handEl.classList.toggle('is-overlap', overlap > 0);
-      handEl.innerHTML = handCards.map((k, i) => {
-        const sel = selectedHand === i ? 'sel' : '';
-        return renderCardButton({
-          key: k,
-          className: sel,
-          style: `--hand-i:${i}`,
-          attrs: ` data-hand-index="${i}" data-inspect-key="${esc(k)}"`,
-          onClick: `handleHandCardClick(event, ${i})`
-        });
-      }).join('');
+      pushSurfaceState({
+        handCards: handCards.map((k, i) => buildHandCardState({ key: k, index: i, selected: selectedHand === i })),
+        handOverlapPx: overlap,
+        handOverlapEnabled: overlap > 0,
+        handEmptyText: ''
+      });
       bindHandLongPress();
     } else {
-      const handEl = $('hand');
-      handEl.classList.remove('is-overlap');
-      handEl.style.removeProperty('--hand-overlap');
-      handEl.innerHTML = '<div class="muted">관전 중이에요.에는 손패 비공개</div>';
+      pushSurfaceState({
+        handCards: [],
+        handOverlapPx: 0,
+        handOverlapEnabled: false,
+        handEmptyText: '관전 중이라 손패를 볼 수 없어요.'
+      });
     }
 
-    const overlay = $('gameEndOverlay');
-    const text = $('gameEndText');
     if (game.winnerId) {
-      if (overlay && text) {
-        const meWin = game.winnerId === pid();
-        text.textContent = meWin ? '승리!' : '패배...';
-        overlay.classList.remove('hidden');
-      }
+      const meWin = game.winnerId === pid();
+      pushSurfaceState({
+        endOverlayVisible: true,
+        endOverlayText: meWin ? '승리!' : '패배...'
+      });
       markEndedCooldown();
       scheduleEndRedirect(1400);
     } else {
-      overlay?.classList.add('hidden');
+      pushSurfaceState({ endOverlayVisible: false });
     }
 
-    $('btnEnd').disabled = isSpectator || !myTurn || !myPriority;
-    const passBtn = $('btnStack');
-    if (passBtn) {
-      passBtn.textContent = '우선권 패스';
-      passBtn.disabled = isSpectator || !myPriority;
-    }
-    $('btnConcede').disabled = isSpectator;
-    const attackBtn = $('oppAttackPanel');
-    if (attackBtn) attackBtn.disabled = isSpectator || !myTurn || !myPriority || game.phase !== 'battle' || !selectedAttacker;
+    pushSurfaceState({
+      endButtonLabel: phaseAdvanceLabel(game.phase),
+      endButtonDisabled: isSpectator || !myTurn || !myPriority,
+      passButtonLabel: '우선권 패스',
+      passButtonDisabled: isSpectator || !myPriority,
+      concedeDisabled: isSpectator,
+      attackDisabled: isSpectator || !myTurn || !myPriority || game.phase !== 'battle' || !selectedAttacker
+    });
   }
 
 
@@ -1068,6 +1132,12 @@
       event?.stopPropagation?.();
       return;
     }
+    const meAgent = game?.agents?.[viewMeId || pid()];
+    const key = meAgent?.hand?.[i];
+    if (selectedHand === i && key) {
+      openCardOverlayByKey(key);
+      return;
+    }
     selectHand(i);
   }
 
@@ -1148,24 +1218,23 @@
     if (!game) return;
     const targetId = which === 'opp' ? viewOppId : viewMeId;
     const title = `${displayName(targetId)} 무덤`;
-    const drawer = $('graveDrawer');
-    const listEl = $('graveList');
-    const titleEl = $('graveDrawerTitle');
-    if (!drawer || !listEl || !titleEl || !targetId) return;
+    if (!targetId) return;
 
     const grave = Array.isArray(game.agents?.[targetId]?.graveyard) ? game.agents[targetId].graveyard : [];
     const latestFirst = [...grave].reverse();
-    titleEl.textContent = `${title} (${grave.length})`;
-    listEl.innerHTML = latestFirst.map((k) => renderCardButton({
-      key: k,
-      className: 'grave-card',
-      attrs: ` data-inspect-key="${esc(k)}"`
-    })).join('') || '<div class="muted">무덤이 비어 있어요.</div>';
-    drawer.classList.remove('hidden');
+    pushSurfaceState({
+      graveVisible: true,
+      graveTitle: `${title} (${grave.length})`,
+      graveCards: latestFirst.map((k, idx) => buildOverlayCardState({
+        key: k,
+        index: idx,
+        className: 'grave-card'
+      }))
+    });
   }
 
   function closeGrave() {
-    $('graveDrawer')?.classList.add('hidden');
+    pushSurfaceState({ graveVisible: false, graveCards: [] });
   }
 
   async function concedeAndExit() {
@@ -1232,9 +1301,17 @@
     }
     document.body.removeAttribute('data-board-lp-bound');
     $('hand')?.removeAttribute('data-lp-bound');
-    $('graveDrawer')?.classList.add('hidden');
-    $('cardInspectOverlay')?.classList.add('hidden');
-    $('effectPickOverlay')?.classList.add('hidden');
+    pushSurfaceState({
+      graveVisible: false,
+      graveCards: [],
+      cardOverlayVisible: false,
+      cardOverlayPreviewHtml: '',
+      cardOverlayMetaHtml: '',
+      cardOverlayKeywordsHtml: '',
+      effectPickVisible: false,
+      effectPickCards: [],
+      endOverlayVisible: false
+    });
     $('phaseFx')?.remove();
     effectPickResolver = null;
     removeEventListener('keydown', keydownHandler);
@@ -1285,6 +1362,6 @@
   }
 
   addEventListener('keydown', keydownHandler);
-  globalThis.BP_NULSIGHT_GAME = { bootstrap: start, teardown };
+  globalThis.BP_NULSIGHT_GAME = { ...(globalThis.BP_NULSIGHT_GAME || {}), bootstrap: start, teardown };
   void start();
 })();

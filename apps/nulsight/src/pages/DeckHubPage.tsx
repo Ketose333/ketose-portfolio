@@ -84,6 +84,41 @@ function summarizeDeck(code: string, defs: Record<string, CardDef>) {
   return { total: parsed.deck.length, kinds: rows.length, rows, effects }
 }
 
+function renderHubCardPreview(item: ReturnType<typeof summarizeDeck>, defs: Record<string, CardDef>) {
+  const rows = item?.rows?.slice(0, 3) || []
+  if (!rows.length) {
+    return <div className="muted">미리보기 카드 없음</div>
+  }
+
+  return rows.map((row) => {
+    const def = defs[row.key]
+    const type = def?.type === 'monster' ? '유닛' : '마법'
+    const meta = [def?.theme, def?.element].filter(Boolean).join(' · ')
+    const footer = def?.type === 'monster' ? `${def?.atk ?? '-'} / ${def?.hp ?? '-'}` : (def?.spellKind || 'spell').toUpperCase()
+
+    return (
+      <div className="hub-card-preview" key={row.key}>
+        <div className={`bp-card ${def?.type === 'monster' ? 'bp-card--unit' : 'bp-card--spell'}`}>
+          <div className="bp-card__chrome" />
+          <div className="bp-card__head">
+            <span className="bp-card__cost">{def?.cost ?? '-'}</span>
+            <span className="bp-card__type">{type}</span>
+          </div>
+          <div className="bp-card__body">
+            <div className="bp-card__name">{def?.name || row.key}</div>
+            <div className={`bp-card__meta${meta ? '' : ' bp-card__meta--empty'}`}>{meta || '분류 없음'}</div>
+            <div className="bp-card__text">{row.qty}장 채용</div>
+          </div>
+          <div className="bp-card__foot">
+            <span className="bp-card__footer">{footer}</span>
+            <span className="bp-card__footer">x{row.qty}</span>
+          </div>
+        </div>
+      </div>
+    )
+  })
+}
+
 export function DeckHubPage() {
   const navigate = useNavigate()
   const shared = getSharedCardsGlobal()
@@ -323,6 +358,9 @@ export function DeckHubPage() {
                   ) : (
                     <span className="muted">표시할 효과 없음</span>
                   )}
+                </div>
+                <div className="hub-card-previews">
+                  {renderHubCardPreview(item.summary, defs)}
                 </div>
               </div>
             </div>
