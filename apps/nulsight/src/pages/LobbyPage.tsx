@@ -1,0 +1,395 @@
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { postJson, readJson } from '../app/api/client'
+import type { AuthResponse, RoomStateResponse } from '../app/types'
+
+const ROOM_KEY = 'bp_last_room_id'
+const AGENT_KEY = 'bp_last_agent_id'
+
+function sanitizeRoomId(value = '') {
+  return String(value).toLowerCase().replace(/[^0-9a-f]/g, '').slice(0, 6)
+}
+
+function loadSessionValue(key: string) {
+  try {
+    return sessionStorage.getItem(key) || ''
+  } catch {
+    return ''
+  }
+}
+
+function saveSessionValue(key: string, value: string) {
+  try {
+    if (value) {
+      sessionStorage.setItem(key, value)
+    }
+  } catch {
+    // noop
+  }
+}
+
+function buildGameUrl(roomId: string, agentId: string) {
+  return `/game?roomId=${encodeURIComponent(roomId)}&agentId=${encodeURIComponent(agentId)}`
+}
+
+export function LobbyPage() {
+  const location = useLocation()
+  const queryRoomId = sanitizeRoomId(new URLSearchParams(location.search).get('roomId') || '')
+  const [authUser, setAuthUser] = useState<AuthResponse['user'] | null>(null)
+  const [roomId, setRoomId] = useState(queryRoomId || loadSessionValue(ROOM_KEY))
+  const [roomState, setRoomState] = useState<RoomStateResponse | null>(null)
+  const [status, setStatus] = useState('대기 중')
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState<null | 'create' | 'check' | 'join'>(null)
+
+  const agentId = authUser?.username || loadSessionValue(AGENT_KEY)
+  const roomCode = sanitizeRoomId(roomState?.roomId || roomId || '------') || '------'
+  const roomAgents = roomState?.agents ?? []
+  const agentsCount = roomState?.agentsCount ?? roomAgents.length
+  const roomStarted = typeof roomState?.started === 'boolean' ? roomState.started : Boolean(roomState?.game)
+  const roomJoinable = typeof roomState?.joinable === 'boolean' ? roomState.joinable : agentsCount < 2
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function bootstrap() {
+      try {
+        const auth = await readJson<AuthResponse>('/api/auth?action=me')
+        if (!auth.ok || !auth.user) {
+          if (!cancelled) {
+            setAuthUser(null)
+            setStatus('로그인하면 방 생성과 입장이 가능합니다.')
+          }
+          return
+        }
+
+        if (cancelled) {
+          return
+        }
+
+        setAuthUser(auth.user)
+        saveSessionValue(AGENT_KEY, auth.user.username)
+        setStatus(`로그인: ${auth.user.displayName || auth.user.username}`)
+      } catch {
+        if (!cancelled) {
+          setAuthUser(null)
+          setStatus('로그인하면 방 생성과 입장이 가능합니다.')
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void bootstrap()
+
+    return () => {
+      cancelled = true
+    }
+  }, [location.pathname, location.search])
+
+  useEffect(() => {
+    if (!roomId || !authUser?.username) {
+      return
+    }
+
+    saveSessionValue(ROOM_KEY, roomId)
+  }, [authUser?.username, roomId])
+
+  useEffect(() => {
+    if (!roomId || !authUser?.username) {
+      return
+    }
+
+    let cancelled = false
+
+    async function syncState(silent = false) {
+      if (!silent) {
+        setBusy('check')
+      }
+
+      try {
+        const response = await readJson<RoomStateResponse>(
+          `/api/rooms?action=state&roomId=${encodeURIComponent(roomId)}`,
+        )
+
+        if (cancelled) {
+          return
+        }
+
+        setRoomState(response)
+
+        if (response.ok) {
+          setStatus(roomStarted ? '진행 중' : '방 상태 확인됨')
+          if (response.started && response.agents?.includes(authUser.username)) {
+            window.location.href = buildGameUrl(roomId, authUser.username)
+          }
+        } else {
+          setStatus(response.error || '방을 찾을 수 없습니다.')
+        }
+      } catch {
+        if (!cancelled) {
+          setStatus('방 상태를 불러오지 못했습니다.')
+        }
+      } finally {
+        if (!cancelled && !silent) {
+          setBusy(null)
+        }
+      }
+    }
+
+    void syncState()
+    const timer = window.setInterval(() => {
+      void syncState(true)
+    }, 2000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [authUser?.username, roomId, roomStarted])
+
+  async function createRoom() {
+    if (!authUser?.username) {
+      return
+    }
+    setBusy('create')
+    setStatus('방 생성 중')
+    try {
+      const response = await postJson<RoomStateResponse>('/api/rooms?action=create', {
+        agentId: authUser.username,
+      })
+
+      if (!response.ok || !response.roomId) {
+        setStatus(response.error || '방 생성에 실패했습니다.')
+        return
+      }
+
+      const nextRoomId = sanitizeRoomId(response.roomId)
+      setRoomId(nextRoomId)
+      setRoomState(response)
+      setStatus('방 생성 완료')
+    } catch {
+      setStatus('방 생성 중 문제가 발생했습니다.')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function checkRoom() {
+    if (!roomId) {
+      return
+    }
+    setBusy('check')
+    setStatus('방 상태 확인 중')
+    try {
+      const response = await readJson<RoomStateResponse>(
+        `/api/rooms?action=state&roomId=${encodeURIComponent(roomId)}`,
+      )
+      setRoomState(response)
+      setStatus(response.ok ? '방 상태 확인됨' : response.error || '방을 찾을 수 없습니다.')
+    } catch {
+      setStatus('방 상태를 불러오지 못했습니다.')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function joinRoom() {
+    if (!roomId || !authUser?.username) {
+      return
+    }
+
+    setBusy('join')
+    setStatus('입장 중')
+    try {
+      const response = await postJson<RoomStateResponse>('/api/rooms?action=join', {
+        roomId,
+        agentId: authUser.username,
+      })
+
+      if (!response.ok) {
+        setStatus(response.error || '입장에 실패했습니다.')
+        return
+      }
+
+      setRoomState(response)
+      if (response.started) {
+        window.location.href = buildGameUrl(roomId, authUser.username)
+        return
+      }
+      setStatus(response.agents && response.agents.length < 2 ? '입장 완료 · 상대 대기 중' : '입장 완료')
+    } catch {
+      setStatus('입장 중 문제가 발생했습니다.')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const ambientRows = useMemo(
+    () => [
+      { label: '내 상태', value: authUser ? authUser.displayName || authUser.username : '-' },
+      { label: '방 상태', value: roomStarted ? '진행 중' : roomState?.ok ? '대기 중' : '-' },
+      { label: '참가 인원', value: `${agentsCount}/2` },
+      { label: '입장 가능', value: roomJoinable ? '가능' : '가득참' },
+    ],
+    [agentsCount, authUser, roomJoinable, roomStarted, roomState?.ok],
+  )
+
+  return (
+    <main className="nulsight-shell">
+      <section className="nulsight-page-grid">
+        <div className="nulsight-page-main">
+          <section className="nulsight-panel">
+            <div className="nulsight-panel__head">
+              <p className="nulsight-kicker">LOBBY</p>
+              <h1 className="nulsight-section-title">빠른 시작</h1>
+            </div>
+
+            <div className="nulsight-lobby-grid">
+              <article className="nulsight-card nulsight-card--stack">
+                <h2>내 계정</h2>
+                <label className="nulsight-label">
+                  <span>에이전트</span>
+                  <input value={authUser?.username || ''} placeholder="로그인 필요" readOnly />
+                </label>
+              </article>
+
+              <article className="nulsight-card nulsight-card--stack">
+                <h2>방 만들기</h2>
+                <p>새 방 코드를 발급하고 상대를 기다립니다.</p>
+                <button
+                  className="nulsight-button nulsight-button--primary"
+                  type="button"
+                  onClick={createRoom}
+                  disabled={loading || busy !== null || !authUser}
+                >
+                  {busy === 'create' ? '생성 중' : '방 만들기'}
+                </button>
+              </article>
+
+              <article className="nulsight-card nulsight-card--stack nulsight-card--wide">
+                <h2>방 코드로 합류</h2>
+                <p>상대와 같은 코드를 입력하면 같은 방에 들어갑니다.</p>
+                <div className="nulsight-inline-form">
+                  <input
+                    value={roomId}
+                    onChange={(event) => setRoomId(sanitizeRoomId(event.target.value))}
+                    placeholder="방 코드를 입력해 주세요"
+                    inputMode="text"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    maxLength={6}
+                  />
+                  <button className="nulsight-button" type="button" onClick={checkRoom} disabled={!roomId || busy !== null}>
+                    {busy === 'check' ? '확인 중' : '방 상태'}
+                  </button>
+                  <button
+                    className="nulsight-button"
+                    type="button"
+                    onClick={joinRoom}
+                    disabled={!roomId || busy !== null || !authUser}
+                  >
+                    {busy === 'join' ? '입장 중' : '입장'}
+                  </button>
+                </div>
+              </article>
+            </div>
+
+            <div className="nulsight-actions nulsight-actions--compact">
+              {!authUser ? (
+                <>
+                  <Link
+                    className="nulsight-button nulsight-button--primary"
+                    to={`/login?next=${encodeURIComponent('/lobby')}`}
+                  >
+                    로그인
+                  </Link>
+                  <Link className="nulsight-button" to="/register">
+                    회원가입
+                  </Link>
+                </>
+              ) : null}
+              <Link className="nulsight-button" to="/deck">
+                덱빌딩
+              </Link>
+              <Link className="nulsight-button" to="/guide">
+                가이드
+              </Link>
+            </div>
+
+            <div className="nulsight-note-stack">
+              <p className="nulsight-status">{status}</p>
+              {!authUser ? (
+                <p className="nulsight-note">
+                  지금은 대기실 구조를 먼저 볼 수 있고, 실제 방 생성과 입장은 로그인 뒤에 활성화됩니다.
+                </p>
+              ) : null}
+            </div>
+          </section>
+
+          <section className="nulsight-panel">
+            <div className="nulsight-panel__head">
+              <p className="nulsight-kicker">FLOW</p>
+              <h2 className="nulsight-section-title">진행 순서</h2>
+            </div>
+            <ol className="nulsight-step-list">
+              <li>
+                <strong>방 만들기 / 코드 입력</strong>
+                <span>상대와 같은 코드를 입력해 같은 방에 입장합니다.</span>
+              </li>
+              <li>
+                <strong>덱 확인</strong>
+                <span>필요하면 덱빌딩에서 수정한 뒤 다시 돌아옵니다.</span>
+              </li>
+              <li>
+                <strong>게임 시작</strong>
+                <span>입장이 완료되면 인게임으로 자동 이동합니다.</span>
+              </li>
+            </ol>
+          </section>
+        </div>
+
+        <aside className="nulsight-page-side">
+          <section className="nulsight-panel">
+            <div className="nulsight-panel__head">
+              <p className="nulsight-kicker">ROOM</p>
+              <h2 className="nulsight-section-title">방 상태</h2>
+            </div>
+            <div className="nulsight-code-box">{roomCode}</div>
+            <dl className="nulsight-kv-list">
+              <div>
+                <dt>참가자</dt>
+                <dd>{roomAgents.length ? roomAgents.join(', ') : `${agentsCount}/2`}</dd>
+              </div>
+              <div>
+                <dt>방장</dt>
+                <dd>{roomState?.ownerId || '-'}</dd>
+              </div>
+              <div>
+                <dt>매치</dt>
+                <dd>{roomStarted ? '진행 중' : '대기 중'}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section className="nulsight-panel">
+            <div className="nulsight-panel__head">
+              <p className="nulsight-kicker">LIVE</p>
+              <h2 className="nulsight-section-title">실시간 상태</h2>
+            </div>
+            <div className="nulsight-mini-grid">
+              {ambientRows.map((entry) => (
+                <article key={entry.label} className="nulsight-mini-card">
+                  <h3>{entry.label}</h3>
+                  <p>{entry.value}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        </aside>
+      </section>
+    </main>
+  )
+}

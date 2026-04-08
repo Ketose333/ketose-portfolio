@@ -1,0 +1,11 @@
+{
+  "extends": "../../configs/tsconfig/vite-app.json",
+  "compilerOptions": {
+    "strict": false,
+    "allowJs": true,
+    "checkJs": false,
+    "esModuleInterop": true,
+    "types": ["vite/client", "node"]
+  },
+  "include": ["src"]
+}

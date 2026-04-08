@@ -1,0 +1,38 @@
+{
+  "name": "@portfolio/nulsight",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Nulsight deployment root inside the portfolio monorepo",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "npm run sync:theme && vite",
+    "build:theme": "node ../../scripts/build-theme-css.mjs ../../themes/theme.oklch.css ../../themes/theme.css",
+    "sync:theme": "npm run build:theme && node build.mjs",
+    "build:code": "node build.mjs",
+    "typecheck": "tsc -b",
+    "palette:build": "node ../../scripts/build-theme-css.mjs public/palette.oklch.css public/palette.css",
+    "build": "npm run palette:build && npm run sync:theme && tsc -b && vite build",
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "@vercel/kv": "^1.0.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router-dom": "^7.14.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "@types/node": "^25.5.2",
+    "esbuild": "^0.28.0",
+    "typescript": "^6.0.2",
+    "vite": "^8.0.1"
+  }
+}

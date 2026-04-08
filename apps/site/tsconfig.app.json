@@ -1,0 +1,7 @@
+{
+  "extends": "../../configs/tsconfig/vite-app.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": false
+  },
+  "include": ["src"]
+}
