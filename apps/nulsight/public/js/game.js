@@ -31,6 +31,7 @@
   let boardPointerEndHandler = null;
   let suppressHandClickUntil = 0;
   let effectPickResolver = null;
+  let queryOverlayResolver = null;
   let actInFlight = false;
   let refreshSeq = 0;
   let uiBusyCount = 0;
@@ -331,7 +332,7 @@
     return null;
   }
 
-  async function buildEffectSelectionPayload(cardKey, timing) {
+  async function buildEffectSelectionPayload(cardKey, timing, options = {}) {
     const def = cardDefByKey(cardKey) || {};
     const effects = Array.isArray(def.effects) ? def.effects : [];
     const targets = effects.filter((e) => e && e.timing === timing);
@@ -343,6 +344,7 @@
     const selectedEffectIndexes = [];
     const selectedEffectCardChoices = {};
     let targetUnitId = null;
+    let didChooseAny = false;
 
     for (let i = 0; i < targets.length; i++) {
       const e = targets[i] || {};
@@ -354,10 +356,13 @@
 
       const isOptional = (e?.mode || 'forced') === 'optional';
       if (isOptional) {
-        const ok = await (window.BP_ALERT?.confirm(`선택 효과를 발동할까?\n${costHint}`, '선택 효과') ?? Promise.resolve(true));
+        const ok = await promptConfirm(`선택 효과를 발동할까?\n${costHint}`, '선택 효과');
         if (!ok) continue;
+        selectedEffectIndexes.push(i);
+        didChooseAny = true;
+      } else {
+        didChooseAny = true;
       }
-      selectedEffectIndexes.push(i);
 
       const kind = e?.action?.kind;
       const count = Math.max(1, Number(e?.action?.count || 1));
@@ -392,11 +397,69 @@
       if (pickedTarget) targetUnitId = pickedTarget;
     }
 
+    if (!didChooseAny && options?.cancelIfEmpty) return null;
+
     const payload = {};
-    if (selectedEffectIndexes.length) payload.selectedEffectIndexes = selectedEffectIndexes;
+    payload.selectedEffectIndexes = selectedEffectIndexes;
     if (Object.keys(selectedEffectCardChoices).length) payload.selectedEffectCardChoices = selectedEffectCardChoices;
     if (targetUnitId) payload.targetUnitId = targetUnitId;
     return payload;
+  }
+
+  function actionKindLabel(kind = '') {
+    const map = {
+      self_destroy_unit: '자기 파괴',
+      search_deck_to_hand: KW_SEARCH,
+      release_unit: '희생',
+      deploy_from_deck: KW_RECRUIT,
+      banish_unit: '제외',
+      attach_equipment: KW_EQUIP,
+      heal_unit: '회복',
+      deal_damage_to_unit: '피해',
+      deal_damage_to_agent: '직격'
+    };
+    return map[String(kind || '')] || '사용';
+  }
+
+  function getActiveSourceActions(meAgent) {
+    if (isSpectator || !game || game.activeAgentId !== pid() || game.phase !== 'main' || (game.stack || []).length > 0) {
+      return [];
+    }
+
+    const out = [];
+    const effectUsage = game?.effectUsage?.[pid()] || {};
+
+    const pushAction = (cardKey, actionName, actionArg, usageKey) => {
+      const def = cardDefByKey(cardKey) || {};
+      const effects = Array.isArray(def.effects) ? def.effects.filter((e) => e && e.timing === 'active') : [];
+      if (!effects.length) return;
+      if (effectUsage?.[usageKey] === game.turn) return;
+
+      const runnable = effects.filter((e) => isConditionMetLocal(e.condition || {}));
+      if (!runnable.length) return;
+
+      const labels = runnable.map((e) => actionKindLabel(e?.action?.kind)).filter(Boolean);
+      out.push({
+        key: `${usageKey}:${normalizeCardKey(cardKey)}`,
+        label: `${cardName(cardKey)} 사용`,
+        detail: labels.join(' · '),
+        action: { name: actionName, arg: actionArg }
+      });
+    };
+
+    (meAgent?.monsterZone || []).forEach((unitId) => {
+      const unit = unitId ? game?.units?.[unitId] : null;
+      if (!unit?.key) return;
+      pushAction(unit.key, 'activateUnitEffect', unitId, `active:unit:${unitId}`);
+    });
+
+    (meAgent?.spellZone || []).forEach((slot, spellZoneIndex) => {
+      const cardKey = spellSlotKey(slot);
+      if (!cardKey) return;
+      pushAction(cardKey, 'activateSpellEffect', spellZoneIndex, `active:spell:${pid()}:${spellZoneIndex}`);
+    });
+
+    return out;
   }
 
   function winnerLabel(winnerId) {
@@ -493,24 +556,9 @@
     const key = normalizeCardKey(cardKey);
     const def = cardDefByKey(key);
     if (!def) return;
-    const previewHtml = `<div class="card-overlay__preview-card">${renderCardContent({ key })}</div>`;
-    const metaHtml = `
-      <div class="card-overlay__title">${esc(def.name || key)}</div>
-      <div class="card-overlay__line">종류: ${esc(getCardType(key) === 'monster' ? '유닛' : '마법')}</div>
-      <div class="card-overlay__line">코스트: ${esc(def.cost ?? 0)}</div>
-      ${def.effect ? `<div class="card-overlay__effect">${esc(normalizeEffectText(def.effect))}</div>` : '<div class="card-overlay__effect muted">효과 없음</div>'}
-    `;
-
-    const list = cardKeywords(def);
-    const keywordsHtml = list.length
-      ? list.map((kw) => `<div class="card-overlay__kw"><strong>${esc(kw)}</strong><span>${esc(keywordDescription(kw, def))}</span></div>`).join('')
-      : '<div class="muted">키워드가 없어요.</div>';
-
     pushSurfaceState({
       cardOverlayVisible: true,
-      cardOverlayPreviewHtml: previewHtml,
-      cardOverlayMetaHtml: metaHtml,
-      cardOverlayKeywordsHtml: keywordsHtml
+      cardOverlayCardKey: key
     });
   }
 
@@ -523,9 +571,7 @@
   function closeCardOverlay() {
     pushSurfaceState({
       cardOverlayVisible: false,
-      cardOverlayPreviewHtml: '',
-      cardOverlayMetaHtml: '',
-      cardOverlayKeywordsHtml: ''
+      cardOverlayCardKey: ''
     });
   }
 
@@ -636,9 +682,89 @@
       key: `${normalizeCardKey(key)}-${index ?? 'overlay'}`,
       cardKey: normalizeCardKey(key),
       className,
-      html: renderCardContent({ key, hand: true }),
       pickIndex: Number.isInteger(index) ? index : undefined
     };
+  }
+
+  function describeStackAction(action = {}) {
+    const kind = String(action?.kind || '').trim();
+    const value = Number(action?.value || 0);
+    switch (kind) {
+      case 'deal_damage_to_agent':
+        return `상대 본체에 ${value || 0} 피해`;
+      case 'deal_damage_to_unit':
+        return `대상 유닛에 ${value || 0} 피해`;
+      case 'heal_unit':
+        return `대상 유닛 회복`;
+      case 'attach_equipment':
+        return `${KW_EQUIP} 효과 적용`;
+      case 'banish_unit':
+        return '대상 유닛 제외';
+      case 'deploy_from_deck':
+        return `${KW_RECRUIT} 대기 중`;
+      case 'search_deck_to_hand':
+        return `${KW_SEARCH} 대기 중`;
+      default:
+        return kind ? `${kind} 해결 대기` : `${KW_CHAIN} 대기 중`;
+    }
+  }
+
+  function buildStackEntryState(item, index = 0) {
+    const key = normalizeCardKey(item?.sourceCardKey || item?.effectKey || `stack-${index}`);
+    const title = cardLabel(key);
+    const action = item?.payload?.action || getStackDefaultAction(item?.effectKey) || null;
+    return {
+      key: `${item?.id || key}-${index}`,
+      actorText: `${displayName(item?.actorId)} · ${title}`,
+      summaryText: describeStackAction(action),
+      cardKey: key
+    };
+  }
+
+  function closeQueryOverlay(result = null) {
+    pushSurfaceState({ queryVisible: false, queryOptions: [] });
+    if (globalThis.BP_NULSIGHT_GAME?.respondQueryOverlay) {
+      delete globalThis.BP_NULSIGHT_GAME.respondQueryOverlay;
+    }
+    const done = queryOverlayResolver;
+    queryOverlayResolver = null;
+    if (typeof done === 'function') done(result);
+  }
+
+  function showQueryOverlay({ title = '확인', message = '', options = [{ label: '확인', value: 'ok', tone: 'primary' }] } = {}) {
+    return new Promise((resolve) => {
+      queryOverlayResolver = resolve;
+      pushSurfaceState({
+        queryVisible: true,
+        queryTitle: title,
+        queryMessage: message,
+        queryOptions: options
+      });
+      globalThis.BP_NULSIGHT_GAME = {
+        ...(globalThis.BP_NULSIGHT_GAME || {}),
+        respondQueryOverlay: (value) => closeQueryOverlay(value)
+      };
+    });
+  }
+
+  async function promptConfirm(message, title = '확인') {
+    const result = await showQueryOverlay({
+      title,
+      message,
+      options: [
+        { label: '취소', value: 'cancel' },
+        { label: '확인', value: 'confirm', tone: 'primary' }
+      ]
+    });
+    return result === 'confirm';
+  }
+
+  async function showInfo(message, title = '안내') {
+    await showQueryOverlay({
+      title,
+      message,
+      options: [{ label: '확인', value: 'ok', tone: 'primary' }]
+    });
   }
 
   function showPhaseFx(text) {
@@ -699,8 +825,7 @@
   async function goLobby(force = false) {
     if (leavingGame) return;
     if (!force && hasLiveMatch()) {
-      const ok = await (window.BP_ALERT?.confirm('진행 중인 게임에서 나가면 복귀가 번거로울 수 있어요. 이동할까요?', '대기실 이동 확인')
-        ?? Promise.resolve(confirm('진행 중인 게임에서 나가면 복귀가 번거로울 수 있어요. 이동할까요?')));
+      const ok = await promptConfirm('진행 중인 게임에서 나가면 복귀가 번거로울 수 있어요. 이동할까요?', '대기실 이동 확인');
       if (!ok) return;
     }
     if (game?.winnerId) markEndedCooldown();
@@ -864,11 +989,22 @@
 
     const myGrave = meAgent?.graveyard || [];
     const oppGrave = opp?.graveyard || [];
+    const myBanish = meAgent?.banished || [];
+    const oppBanish = opp?.banished || [];
+    const stackEntries = (game.stack || []).map((item, index) => buildStackEntryState(item, index));
+    const activeActions = getActiveSourceActions(meAgent);
     pushSurfaceState({
       myDeckText: `덱 ${myDeckLeft}`,
       oppDeckText: `덱 ${oppDeckLeft}`,
       myGraveText: `무덤 ${myGrave.length}`,
       oppGraveText: `무덤 ${oppGrave.length}`,
+      myBanishText: `제외 ${myBanish.length}`,
+      oppBanishText: `제외 ${oppBanish.length}`,
+      myGraveActive: myGrave.length > 0,
+      oppGraveActive: oppGrave.length > 0,
+      myBanishActive: myBanish.length > 0,
+      oppBanishActive: oppBanish.length > 0,
+      stackActive: stackEntries.length > 0,
       mySummary: {
         hp: String(meAgent?.hp ?? '-'),
         mana: `${meAgent?.mana ?? '-'}/${meAgent?.manaMax ?? '-'}`,
@@ -882,7 +1018,9 @@
       myMonsterSlots,
       oppMonsterSlots,
       mySpellSlots,
-      oppSpellSlots
+      oppSpellSlots,
+      stackEntries,
+      activeActions
     });
 
     if (!isSpectator) {
@@ -921,7 +1059,7 @@
       endButtonLabel: phaseAdvanceLabel(game.phase),
       endButtonDisabled: isSpectator || !myTurn || !myPriority,
       passButtonLabel: '우선권 패스',
-      passButtonDisabled: isSpectator || !myPriority,
+      passButtonDisabled: isSpectator || !myPriority || (!((game.stack || []).length) && !game.pendingAdvance),
       concedeDisabled: isSpectator,
       attackDisabled: isSpectator || !myTurn || !myPriority || game.phase !== 'battle' || !selectedAttacker
     });
@@ -1005,14 +1143,15 @@
         if (!opts?.silent) {
           const msg = reasonLabel(r?.reason);
           endUiBusy();
-          await (window.BP_ALERT?.info(msg, '게임 액션') ?? Promise.resolve(alert(msg)));
+          await showInfo(msg, '게임 액션');
         }
         await refreshState(false);
-        return;
+        return false;
       }
       renderGame(r);
       lastRenderSig = gameSig(r.game);
       if (r?.matchEnded || r?.roomReset || r?.game?.winnerId) scheduleEndRedirect(1100);
+      return true;
     } finally {
       actInFlight = false;
       if (!opts?.silent) endUiBusy();
@@ -1068,7 +1207,7 @@
     const targetSpec = getPendingUnitTargetSpec();
     const payload = { handIndex: selectedHand, zoneIndex };
     if (targetSpec?.required && !selectedSpellTarget) {
-      await (window.BP_ALERT?.info('대상 유닛을 먼저 선택해 주세요.', '대상 선택') ?? Promise.resolve(alert('대상 유닛을 먼저 선택해 주세요.')));
+      await showInfo('대상 유닛을 먼저 선택해 주세요.', '대상 선택');
       return;
     }
     if (def.spellKind === 'equip' && selectedSpellTarget) payload.targetUnitId = selectedSpellTarget;
@@ -1093,7 +1232,7 @@
     const payload = { handIndex: selectedHand, zoneIndex };
 
     if (targetSpec?.required && !selectedSpellTarget) {
-      await (window.BP_ALERT?.info('대상 유닛을 먼저 선택해 주세요.', '대상 선택') ?? Promise.resolve(alert('대상 유닛을 먼저 선택해 주세요.')));
+      await showInfo('대상 유닛을 먼저 선택해 주세요.', '대상 선택');
       return;
     }
 
@@ -1105,6 +1244,42 @@
     await act('play_card', payload);
     selectedHand = null;
     selectedSpellTarget = null;
+    renderGame({});
+  }
+
+  async function activateUnitEffect(unitId) {
+    if (!unitId || !game || game.activeAgentId !== pid() || game.phase !== 'main') return;
+    const unit = game?.units?.[unitId];
+    if (!unit || unit.ownerId !== pid()) return;
+    const payload = { unitId };
+    const effectPick = await buildEffectSelectionPayload(unit.key, 'active', { cancelIfEmpty: true });
+    if (effectPick === null) return;
+    Object.assign(payload, effectPick);
+    const ok = await act('active_effect', payload);
+    if (ok) {
+      selectedSpellTarget = null;
+      selectedHand = null;
+      selectedAttacker = null;
+    }
+    renderGame({});
+  }
+
+  async function activateSpellEffect(spellZoneIndex) {
+    if (!game || game.activeAgentId !== pid() || game.phase !== 'main') return;
+    const meAgent = game?.agents?.[pid()];
+    const slot = Number.isInteger(spellZoneIndex) ? meAgent?.spellZone?.[spellZoneIndex] : null;
+    const cardKey = spellSlotKey(slot);
+    if (!cardKey) return;
+    const payload = { spellZoneIndex };
+    const effectPick = await buildEffectSelectionPayload(cardKey, 'active', { cancelIfEmpty: true });
+    if (effectPick === null) return;
+    Object.assign(payload, effectPick);
+    const ok = await act('active_effect', payload);
+    if (ok) {
+      selectedSpellTarget = null;
+      selectedHand = null;
+      selectedAttacker = null;
+    }
     renderGame({});
   }
 
@@ -1214,17 +1389,19 @@
     document.body.addEventListener('pointerleave', boardPointerEndHandler);
   }
 
-  function openGrave(which) {
+  function openPile(which, kind = 'graveyard') {
     if (!game) return;
     const targetId = which === 'opp' ? viewOppId : viewMeId;
-    const title = `${displayName(targetId)} 무덤`;
     if (!targetId) return;
-
-    const grave = Array.isArray(game.agents?.[targetId]?.graveyard) ? game.agents[targetId].graveyard : [];
-    const latestFirst = [...grave].reverse();
+    const pileName = kind === 'banished' ? '제외' : '무덤';
+    const title = `${displayName(targetId)} ${pileName}`;
+    const pile = kind === 'banished'
+      ? (Array.isArray(game.agents?.[targetId]?.banished) ? game.agents[targetId].banished : [])
+      : (Array.isArray(game.agents?.[targetId]?.graveyard) ? game.agents[targetId].graveyard : []);
+    const latestFirst = [...pile].reverse();
     pushSurfaceState({
       graveVisible: true,
-      graveTitle: `${title} (${grave.length})`,
+      graveTitle: `${title} (${pile.length})`,
       graveCards: latestFirst.map((k, idx) => buildOverlayCardState({
         key: k,
         index: idx,
@@ -1233,13 +1410,29 @@
     });
   }
 
+  function openGrave(which) {
+    openPile(which, 'graveyard');
+  }
+
+  function openBanish(which) {
+    openPile(which, 'banished');
+  }
+
   function closeGrave() {
     pushSurfaceState({ graveVisible: false, graveCards: [] });
   }
 
+  function openStackOverlay() {
+    pushSurfaceState({ stackVisible: true });
+  }
+
+  function closeStackOverlay() {
+    pushSurfaceState({ stackVisible: false });
+  }
+
   async function concedeAndExit() {
-    await act('concede');
-    goLobby(true);
+    const ok = await act('concede');
+    if (ok) goLobby(true);
   }
 
   window.refreshState = refreshState;
@@ -1252,12 +1445,18 @@
   window.placeSelectedToSpell = placeSelectedToSpell;
   window.attackOpponentUnit = attackOpponentUnit;
   window.attackOpponentAgent = attackOpponentAgent;
+  window.activateUnitEffect = activateUnitEffect;
+  window.activateSpellEffect = activateSpellEffect;
   window.openGrave = openGrave;
+  window.openBanish = openBanish;
   window.closeGrave = closeGrave;
+  window.openStackOverlay = openStackOverlay;
+  window.closeStackOverlay = closeStackOverlay;
   window.openCardOverlayByKey = openCardOverlayByKey;
   window.openCardOverlayByUnit = openCardOverlayByUnit;
   window.closeCardOverlay = closeCardOverlay;
   window.closeEffectPickOverlay = closeEffectPickOverlay;
+  window.respondQueryOverlay = (value) => closeQueryOverlay(value);
   window.handleHandCardClick = handleHandCardClick;
   window.concedeAndExit = concedeAndExit;
   window.goLobby = goLobby;
@@ -1304,16 +1503,19 @@
     pushSurfaceState({
       graveVisible: false,
       graveCards: [],
+      stackVisible: false,
+      stackEntries: [],
       cardOverlayVisible: false,
-      cardOverlayPreviewHtml: '',
-      cardOverlayMetaHtml: '',
-      cardOverlayKeywordsHtml: '',
+      cardOverlayCardKey: '',
       effectPickVisible: false,
       effectPickCards: [],
+      queryVisible: false,
+      queryOptions: [],
       endOverlayVisible: false
     });
     $('phaseFx')?.remove();
     effectPickResolver = null;
+    queryOverlayResolver = null;
     removeEventListener('keydown', keydownHandler);
   }
 
@@ -1351,7 +1553,14 @@
       closeEffectPickOverlay(false);
       return;
     }
+    const queryOpen = !$('queryOverlay')?.classList.contains('hidden');
+    if (queryOpen) {
+      closeQueryOverlay('cancel');
+      return;
+    }
     closeCardOverlay();
+    closeGrave();
+    closeStackOverlay();
   };
 
   function start() {

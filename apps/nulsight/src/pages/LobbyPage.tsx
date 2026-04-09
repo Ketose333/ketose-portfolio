@@ -1,48 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { postJson, readJson } from '../app/api/client'
+import { buildGameUrl, sanitizeRoomId } from '../client/game/room'
+import { AGENT_KEY, ROOM_KEY, loadSavedAgent, loadSavedRoom, saveAgent, saveRoom } from '../client/game/session'
+import { readClipboardTextSafe, writeClipboardTextSafe } from '../client/ui/clipboard'
 import type { AuthResponse, RoomStateResponse } from '../app/types'
-
-const ROOM_KEY = 'bp_last_room_id'
-const AGENT_KEY = 'bp_last_agent_id'
-
-function sanitizeRoomId(value = '') {
-  return String(value).toLowerCase().replace(/[^0-9a-f]/g, '').slice(0, 6)
-}
-
-function loadSessionValue(key: string) {
-  try {
-    return sessionStorage.getItem(key) || ''
-  } catch {
-    return ''
-  }
-}
-
-function saveSessionValue(key: string, value: string) {
-  try {
-    if (value) {
-      sessionStorage.setItem(key, value)
-    }
-  } catch {
-    // noop
-  }
-}
-
-function buildGameUrl(roomId: string, agentId: string) {
-  return `/game?roomId=${encodeURIComponent(roomId)}&agentId=${encodeURIComponent(agentId)}`
-}
 
 export function LobbyPage() {
   const location = useLocation()
+  const navigate = useNavigate()
   const queryRoomId = sanitizeRoomId(new URLSearchParams(location.search).get('roomId') || '')
   const [authUser, setAuthUser] = useState<AuthResponse['user'] | null>(null)
-  const [roomId, setRoomId] = useState(queryRoomId || loadSessionValue(ROOM_KEY))
+  const [roomId, setRoomId] = useState(queryRoomId || loadSavedRoom())
   const [roomState, setRoomState] = useState<RoomStateResponse | null>(null)
   const [status, setStatus] = useState('대기 중')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<null | 'create' | 'check' | 'join'>(null)
 
-  const agentId = authUser?.username || loadSessionValue(AGENT_KEY)
+  const agentId = authUser?.username || loadSavedAgent()
   const roomCode = sanitizeRoomId(roomState?.roomId || roomId || '------') || '------'
   const roomAgents = roomState?.agents ?? []
   const agentsCount = roomState?.agentsCount ?? roomAgents.length
@@ -68,7 +43,7 @@ export function LobbyPage() {
         }
 
         setAuthUser(auth.user)
-        saveSessionValue(AGENT_KEY, auth.user.username)
+        saveAgent(auth.user.username)
         setStatus(`로그인: ${auth.user.displayName || auth.user.username}`)
       } catch {
         if (!cancelled) {
@@ -94,7 +69,7 @@ export function LobbyPage() {
       return
     }
 
-    saveSessionValue(ROOM_KEY, roomId)
+    saveRoom(roomId)
   }, [authUser?.username, roomId])
 
   useEffect(() => {
@@ -121,9 +96,9 @@ export function LobbyPage() {
         setRoomState(response)
 
         if (response.ok) {
-          setStatus(roomStarted ? '진행 중' : '방 상태 확인됨')
+          setStatus(response.started ? '진행 중' : '방 상태 확인됨')
           if (response.started && response.agents?.includes(authUser.username)) {
-            window.location.href = buildGameUrl(roomId, authUser.username)
+            navigate(buildGameUrl(roomId, authUser.username))
           }
         } else {
           setStatus(response.error || '방을 찾을 수 없습니다.')
@@ -148,7 +123,7 @@ export function LobbyPage() {
       cancelled = true
       window.clearInterval(timer)
     }
-  }, [authUser?.username, roomId, roomStarted])
+  }, [authUser?.username, navigate, roomId, roomStarted])
 
   async function createRoom() {
     if (!authUser?.username) {
@@ -216,7 +191,7 @@ export function LobbyPage() {
 
       setRoomState(response)
       if (response.started) {
-        window.location.href = buildGameUrl(roomId, authUser.username)
+        navigate(buildGameUrl(roomId, authUser.username))
         return
       }
       setStatus(response.agents && response.agents.length < 2 ? '입장 완료 · 상대 대기 중' : '입장 완료')
@@ -224,6 +199,33 @@ export function LobbyPage() {
       setStatus('입장 중 문제가 발생했습니다.')
     } finally {
       setBusy(null)
+    }
+  }
+
+  async function copyRoomCode() {
+    if (!roomState?.roomId) {
+      setStatus('복사할 방 코드가 없습니다.')
+      return
+    }
+    try {
+      const ok = await writeClipboardTextSafe(roomState.roomId)
+      setStatus(ok ? '방 코드를 복사했습니다.' : '방 코드 복사에 실패했습니다.')
+    } catch {
+      setStatus('방 코드 복사에 실패했습니다.')
+    }
+  }
+
+  async function pasteRoomCode() {
+    try {
+      const nextCode = sanitizeRoomId(await readClipboardTextSafe())
+      if (!nextCode) {
+        setStatus('클립보드에 방 코드가 없습니다.')
+        return
+      }
+      setRoomId(nextCode)
+      setStatus('방 코드를 붙여넣었습니다.')
+    } catch {
+      setStatus('클립보드에서 방 코드를 읽지 못했습니다.')
     }
   }
 
@@ -249,16 +251,12 @@ export function LobbyPage() {
 
             <div className="nulsight-lobby-grid">
               <article className="nulsight-card nulsight-card--stack">
-                <h2>내 계정</h2>
-                <label className="nulsight-label">
-                  <span>에이전트</span>
-                  <input value={authUser?.username || ''} placeholder="로그인 필요" readOnly />
-                </label>
+                <h2>계정</h2>
+                <input value={authUser?.username || ''} placeholder="로그인 필요" readOnly />
               </article>
 
               <article className="nulsight-card nulsight-card--stack">
                 <h2>방 만들기</h2>
-                <p>새 방 코드를 발급하고 상대를 기다립니다.</p>
                 <button
                   className="nulsight-button nulsight-button--primary"
                   type="button"
@@ -271,11 +269,16 @@ export function LobbyPage() {
 
               <article className="nulsight-card nulsight-card--stack nulsight-card--wide">
                 <h2>방 코드로 합류</h2>
-                <p>상대와 같은 코드를 입력하면 같은 방에 들어갑니다.</p>
                 <div className="nulsight-inline-form">
                   <input
                     value={roomId}
                     onChange={(event) => setRoomId(sanitizeRoomId(event.target.value))}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' && roomId && busy === null && authUser) {
+                        event.preventDefault()
+                        void joinRoom()
+                      }
+                    }}
                     placeholder="방 코드를 입력해 주세요"
                     inputMode="text"
                     autoCapitalize="none"
@@ -284,6 +287,9 @@ export function LobbyPage() {
                   />
                   <button className="nulsight-button" type="button" onClick={checkRoom} disabled={!roomId || busy !== null}>
                     {busy === 'check' ? '확인 중' : '방 상태'}
+                  </button>
+                  <button className="nulsight-button" type="button" onClick={() => void pasteRoomCode()} disabled={busy !== null}>
+                    코드 붙여넣기
                   </button>
                   <button
                     className="nulsight-button"
@@ -321,33 +327,7 @@ export function LobbyPage() {
 
             <div className="nulsight-note-stack">
               <p className="nulsight-status">{status}</p>
-              {!authUser ? (
-                <p className="nulsight-note">
-                  지금은 대기실 구조를 먼저 볼 수 있고, 실제 방 생성과 입장은 로그인 뒤에 활성화됩니다.
-                </p>
-              ) : null}
             </div>
-          </section>
-
-          <section className="nulsight-panel">
-            <div className="nulsight-panel__head">
-              <p className="nulsight-kicker">FLOW</p>
-              <h2 className="nulsight-section-title">진행 순서</h2>
-            </div>
-            <ol className="nulsight-step-list">
-              <li>
-                <strong>방 만들기 / 코드 입력</strong>
-                <span>상대와 같은 코드를 입력해 같은 방에 입장합니다.</span>
-              </li>
-              <li>
-                <strong>덱 확인</strong>
-                <span>필요하면 덱빌딩에서 수정한 뒤 다시 돌아옵니다.</span>
-              </li>
-              <li>
-                <strong>게임 시작</strong>
-                <span>입장이 완료되면 인게임으로 자동 이동합니다.</span>
-              </li>
-            </ol>
           </section>
         </div>
 
@@ -357,10 +337,23 @@ export function LobbyPage() {
               <p className="nulsight-kicker">ROOM</p>
               <h2 className="nulsight-section-title">방 상태</h2>
             </div>
-            <div className="nulsight-code-box">{roomCode}</div>
+            <div className="nulsight-room-code">
+              <div className="nulsight-room-code__label">현재 방 코드</div>
+              <div className="nulsight-room-code__row">
+                <div className="nulsight-code-box">{roomCode}</div>
+                <button
+                  className="nulsight-button nulsight-room-code__copy"
+                  type="button"
+                  onClick={() => void copyRoomCode()}
+                  disabled={!roomState?.roomId}
+                >
+                  코드 복사
+                </button>
+              </div>
+            </div>
             <dl className="nulsight-kv-list">
               <div>
-                <dt>참가자</dt>
+                <dt>참가 인원</dt>
                 <dd>{roomAgents.length ? roomAgents.join(', ') : `${agentsCount}/2`}</dd>
               </div>
               <div>

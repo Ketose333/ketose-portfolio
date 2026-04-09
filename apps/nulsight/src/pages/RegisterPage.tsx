@@ -100,7 +100,6 @@ export function RegisterPage() {
 
         <div className="nulsight-note-stack">
           {status ? <p className="nulsight-status">{status}</p> : null}
-          <p className="nulsight-note">표시 이름은 선택이며, 아이디와 비밀번호만으로도 가입할 수 있습니다.</p>
           <p className="nulsight-note">
             이미 계정이 있으면 <Link to={`/login${location.search}`}>로그인</Link>해 주세요.
           </p>

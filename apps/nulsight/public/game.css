@@ -18,13 +18,14 @@ body {
     position: relative;
     padding-top: 0;
     display: grid;
-    gap: 16px;
+    gap: 10px;
+    align-content: start;
 }
 
 .duel-stage {
     position: relative;
     display: grid;
-    gap: 14px;
+    gap: 10px;
 }
 
 .duel-stage>*:not(.game-fx-layer) {
@@ -66,10 +67,8 @@ body {
 
 .game-status-strip {
     border: 1px solid var(--theme-shell-border);
-    background: linear-gradient(180deg,
-            color-mix(in srgb, var(--theme-panel-strong) 94%, black 6%),
-            color-mix(in srgb, var(--theme-panel) 92%, black 8%));
-    padding: 10px 12px;
+    background: var(--theme-shell-fill);
+    padding: 8px 12px;
 }
 
 .game-status-strip__main {
@@ -90,7 +89,36 @@ body {
     justify-content: space-between;
     gap: var(--sp-4);
     flex-wrap: wrap;
-    margin-top: 10px;
+    margin-top: 8px;
+}
+
+.hud-phase-track {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.hud-phase-pill {
+    min-height: 28px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--theme-border);
+    background: var(--theme-bg-elevated);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--theme-muted);
+}
+
+.hud-phase-pill.is-active {
+    color: var(--theme-bg);
+    background: var(--theme-text);
+    border-color: var(--theme-border-strong);
+}
+
+.hud-phase-pill.is-passed {
+    color: var(--theme-text);
+    border-color: var(--theme-shell-border-strong);
 }
 
 .hud-head,
@@ -135,7 +163,7 @@ body {
 
 .hud-focus {
     font-size: var(--fs-min-readable);
-    opacity: 0.9;
+    opacity: var(--theme-alpha-strong);
 }
 
 .hud-meta {
@@ -146,7 +174,7 @@ body {
 
 .hud-notice {
     font-size: var(--fs-min-readable);
-    opacity: 0.9;
+    opacity: var(--theme-alpha-strong);
     color: var(--theme-muted);
 }
 
@@ -161,26 +189,66 @@ body {
 }
 
 .game-toolbar--rail {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--sp-5);
+    grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr);
+    align-items: start;
+    gap: 10px;
     border: 1px solid var(--theme-shell-border);
-    background: linear-gradient(180deg,
-            color-mix(in srgb, var(--theme-panel-strong) 96%, white 4%),
-            color-mix(in srgb, var(--theme-panel) 94%, black 6%));
-    padding: 10px 12px;
-    min-height: 64px;
+    background: var(--theme-shell-fill);
+    padding: 8px 12px;
+    min-height: 60px;
 }
 
 .game-toolbar__identity {
     display: grid;
-    gap: 4px;
+    gap: 2px;
+    align-content: center;
+    min-height: 32px;
 }
 
 .game-toolbar__actions {
+    display: grid;
+    gap: 8px;
+    justify-items: end;
+    align-content: center;
+}
+
+.game-toolbar__cluster {
+    display: grid;
+    gap: 6px;
+    justify-items: end;
+    width: 100%;
+}
+
+.game-toolbar__label {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--theme-muted);
+}
+
+.game-toolbar__group {
     display: flex;
-    gap: var(--sp-4);
     flex-wrap: wrap;
+    gap: var(--sp-3);
+    justify-content: flex-end;
+    width: 100%;
+}
+
+.game-toolbar__group--active {
+    min-height: 30px;
+}
+
+.game-toolbar__empty {
+    align-self: center;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    border: 1px solid var(--theme-border);
+    background: var(--theme-bg-elevated);
+    font-size: 12px;
+    color: var(--theme-muted);
 }
 
 .game-toolbar__guide {
@@ -188,15 +256,19 @@ body {
     color: var(--theme-muted);
     font-size: var(--fs-min-readable);
     line-height: 1.45;
+    max-width: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .game-toolbar button {
-    min-height: 40px;
+    min-height: 36px;
     border: 1px solid var(--theme-border-strong);
     background: var(--theme-bg-elevated);
     color: var(--theme-text);
     box-shadow: none;
-    padding-inline: 14px;
+    padding-inline: 12px;
 }
 
 .game-toolbar .nulsight-button--primary,
@@ -279,10 +351,11 @@ body {
 
 .field-side {
     flex: 0 0 auto;
-    width: min(86px, calc(var(--zone-cell) * 0.82));
+    width: min(78px, calc(var(--zone-cell) * 0.76));
     display: grid;
-    grid-template-rows: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    padding-left: 2px;
 }
 
 .zone-row {
@@ -310,7 +383,7 @@ body {
 .slot {
     aspect-ratio: 3 / 4;
     border: 1px solid var(--theme-border-strong);
-    background: linear-gradient(180deg, color-mix(in srgb, var(--theme-panel-strong) 92%, white 8%), var(--theme-bg-elevated));
+    background: var(--theme-panel-fill-raised);
     padding: 6px;
     font-size: var(--fs-min-readable);
     transition: 120ms ease;
@@ -345,7 +418,7 @@ body {
 }
 
 .slot.exhausted {
-    opacity: 0.56;
+    opacity: var(--theme-alpha-disabled);
     filter: saturate(0.7);
 }
 
@@ -354,11 +427,12 @@ body {
     display: flex;
     gap: 10px;
     align-items: stretch;
+    justify-content: space-between;
 }
 
 .attack-agent {
     flex: 0 0 auto;
-    min-width: 116px;
+    min-width: 104px;
     min-height: 40px;
     padding: 0 14px;
     box-shadow: none;
@@ -414,17 +488,30 @@ body {
 .utility-zone {
     box-sizing: border-box;
     border: 1px solid var(--theme-border-strong);
-    padding: 8px 6px;
-    background: linear-gradient(180deg, color-mix(in srgb, var(--theme-panel-strong) 92%, white 8%), var(--theme-bg-elevated));
-    font-size: 12px;
-    line-height: 1.2;
-    text-align: center;
+    padding: 10px 6px 8px;
+    background: var(--theme-panel-fill-raised);
     width: 100%;
     aspect-ratio: 3 / 4;
     display: grid;
-    place-items: center;
-    font-weight: 800;
-    letter-spacing: 0.02em;
+    align-content: space-between;
+    justify-items: center;
+    gap: 6px;
+    text-align: center;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-text) 7%, transparent);
+}
+
+.utility-zone__label {
+    font-size: 11px;
+    color: var(--theme-muted);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.utility-zone__value {
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 0.01em;
+    line-height: 1;
 }
 
 /* =============================
@@ -433,7 +520,7 @@ body {
 
 .hand-wrap {
     margin-top: 0;
-    padding-top: 10px;
+    padding-top: 6px;
 }
 
 .hand-head__status {
@@ -464,10 +551,10 @@ body {
     transform-origin: center;
     z-index: calc(var(--hand-i, 0) + 1);
     flex: 0 0 auto;
-    width: 122px;
-    height: 166px;
+    width: 132px;
+    height: 180px;
     border: 1px solid var(--theme-border-strong);
-    background: linear-gradient(180deg, color-mix(in srgb, var(--theme-panel-strong) 92%, white 8%), var(--theme-bg-elevated));
+    background: var(--theme-panel-fill-raised);
     padding: var(--sp-4);
     font-size: var(--fs-min-readable);
     transition: 120ms ease;
@@ -506,11 +593,11 @@ body {
 }
 
 .bp-card__name {
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .bp-card__text {
-    font-size: 11px;
+    font-size: 11.5px;
     -webkit-line-clamp: 4;
 }
 
@@ -547,40 +634,15 @@ body {
 }
 
 /* =============================
-   GRAVE DRAWER
+   PILE OVERLAY
 ============================= */
 
-.grave-drawer {
-    position: fixed;
-    top: 61px;
-    right: 0;
-    width: min(520px, 94vw);
-    height: calc(100dvh - 61px);
-    z-index: 10020;
-    background: linear-gradient(180deg, var(--theme-panel-strong), var(--theme-panel));
-    border-left: 1px solid var(--theme-shell-border);
-    box-shadow: -24px 0 48px color-mix(in srgb, black 45%, transparent);
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-5);
-    overscroll-behavior: contain;
+.pile-overlay__panel {
+    width: min(1040px, 94vw);
 }
 
-.grave-drawer.hidden {
-    display: none;
-}
-
-.grave-drawer__head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--sp-4);
-}
-
-.grave-drawer__list {
-    flex: 1;
-    overflow-y: auto;
+.pile-overlay__list {
+    margin-top: 12px;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: var(--sp-4);
@@ -590,6 +652,53 @@ body {
 .grave-card {
     width: 100%;
     height: 166px;
+}
+
+.utility-zone.is-live {
+    border-color: var(--theme-shell-border-strong);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--theme-text) 18%, transparent) inset;
+    color: var(--theme-text-strong);
+}
+
+.stack-overlay__panel {
+    width: min(860px, 94vw);
+}
+
+.stack-overlay__list {
+    margin-top: 12px;
+    display: grid;
+    gap: var(--sp-4);
+}
+
+.stack-entry {
+    display: grid;
+    grid-template-columns: 126px minmax(0, 1fr);
+    gap: var(--sp-5);
+    align-items: center;
+    padding: 10px;
+    border: 1px solid var(--theme-border);
+    background: var(--theme-bg-elevated);
+}
+
+.stack-entry__card {
+    width: 126px;
+    min-height: 172px;
+}
+
+.stack-entry__body {
+    display: grid;
+    gap: var(--sp-3);
+}
+
+.stack-entry__actor {
+    font-size: var(--fs-min-readable);
+    color: var(--theme-muted);
+}
+
+.stack-entry__summary {
+    font-size: var(--fs-body);
+    line-height: 1.45;
+    color: var(--theme-text-strong);
 }
 
 /* =============================
@@ -631,7 +740,7 @@ body {
     overflow: auto;
     border: 1px solid var(--theme-shell-border);
     background: linear-gradient(180deg, var(--theme-panel-strong), var(--theme-panel));
-    box-shadow: 0 28px 80px color-mix(in srgb, black 52%, transparent);
+    box-shadow: var(--theme-overlay-shadow);
     padding: 14px;
 }
 
@@ -692,7 +801,7 @@ body {
 
 .card-overlay__line {
     font-size: var(--fs-min-readable);
-    opacity: 0.92;
+    opacity: var(--theme-alpha-strong);
 }
 
 .card-overlay__effect {
@@ -757,6 +866,25 @@ body {
     scroll-snap-align: start;
 }
 
+.query-overlay__panel {
+    width: min(520px, 92vw);
+}
+
+.query-overlay__message {
+    margin: 12px 0 0;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    color: var(--theme-text-strong);
+}
+
+.query-overlay__actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--sp-4);
+    flex-wrap: wrap;
+}
+
 /* =============================
    GAME END OVERLAY
 ============================= */
@@ -795,6 +923,12 @@ body {
     padding: 0 14px;
 }
 
+@media (max-width: 900px) {
+    .game-toolbar__guide {
+        white-space: normal;
+    }
+}
+
 @media (min-width: 1024px) {
     .hud,
 .game-toolbar,
@@ -829,8 +963,11 @@ body {
     }
 
     .utility-zone {
-        font-size: var(--fs-min-readable);
         padding: 6px;
+    }
+
+    .utility-zone__value {
+        font-size: 16px;
     }
 }
 
@@ -906,6 +1043,26 @@ body {
     .game-status-strip__sub {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .hud-phase-track {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .game-toolbar--rail {
+        grid-template-columns: 1fr;
+    }
+
+    .game-toolbar__actions {
+        justify-items: stretch;
+    }
+
+    .game-toolbar__cluster {
+        justify-items: stretch;
+    }
+
+    .game-toolbar__group {
+        justify-content: flex-start;
     }
 
     .card-overlay__content {

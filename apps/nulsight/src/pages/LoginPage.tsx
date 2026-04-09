@@ -101,7 +101,6 @@ export function LoginPage() {
 
         <div className="nulsight-note-stack">
           {status ? <p className="nulsight-status">{status}</p> : null}
-          <p className="nulsight-note">계정이 없으면 아래 회원가입 페이지를 이용해 주세요.</p>
           <Link className="nulsight-inline-link" to={`/register${location.search}`}>
             회원가입으로 이동
           </Link>

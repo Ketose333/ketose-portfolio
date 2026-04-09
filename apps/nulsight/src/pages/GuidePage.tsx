@@ -57,28 +57,10 @@ export function GuidePage() {
   return (
     <main className="nulsight-shell nulsight-shell--reading">
       <section className="nulsight-page-main">
-        <section className="nulsight-panel nulsight-panel--compact" aria-label="가이드 요약">
+        <section className="nulsight-panel nulsight-panel--compact" aria-label="기본 규칙">
           <div className="nulsight-panel__head">
             <p className="nulsight-kicker">GUIDE</p>
             <h1 className="nulsight-section-title">기본 규칙</h1>
-          </div>
-          <div className="nulsight-mini-grid">
-            <article className="nulsight-mini-card">
-              <h3>목표</h3>
-              <p>상대 HP를 0으로 만들면 승리합니다.</p>
-            </article>
-            <article className="nulsight-mini-card">
-              <h3>기본 HP</h3>
-              <p>양쪽 모두 20에서 시작합니다.</p>
-            </article>
-            <article className="nulsight-mini-card">
-              <h3>진행</h3>
-              <p>드로우, 메인, 배틀, 엔드 순으로 진행됩니다.</p>
-            </article>
-            <article className="nulsight-mini-card">
-              <h3>조작</h3>
-              <p>카드를 선택한 뒤 슬롯이나 유닛을 클릭합니다.</p>
-            </article>
           </div>
         </section>
 

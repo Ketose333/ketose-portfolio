@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { GameCardSurface } from '../app/components/GameCardSurface'
 import { GameFxLayer } from '../app/components/GameFxLayer'
 import { GatedPageNotice } from '../app/components/GatedPageNotice'
+import { getSharedCardsGlobal, normalizeCardKey, type CardDef } from '../app/globals'
 
 const GAME_STYLES = [
   { id: 'nulsight-game-style-core', href: '/styles.css' },
@@ -30,9 +32,13 @@ declare global {
     attackOpponentAgent?: () => void
     goLobby?: (force?: boolean) => void
     openGrave?: (which: string) => void
+    openBanish?: (which: string) => void
     closeGrave?: () => void
+    openStackOverlay?: () => void
+    closeStackOverlay?: () => void
     closeCardOverlay?: () => void
     closeEffectPickOverlay?: (commit?: boolean) => void
+    respondQueryOverlay?: (value: string) => void
     openCardOverlayByKey?: (key: string) => void
     openCardOverlayByUnit?: (unitId: string) => void
     handleHandCardClick?: (event: unknown, index: number) => void
@@ -81,8 +87,36 @@ type GameOverlayCardState = {
   key: string
   cardKey: string
   className: string
-  html: string
   pickIndex?: number
+}
+
+type GameStackEntryState = {
+  key: string
+  actorText: string
+  summaryText: string
+  cardKey: string
+}
+
+type GameQueryOptionState = {
+  label: string
+  value: string
+  tone?: 'default' | 'primary' | 'danger'
+}
+
+type GameActiveActionState = {
+  key: string
+  label: string
+  detail?: string
+  action: GameSurfaceAction
+  disabled?: boolean
+}
+
+function renderPileText(text: string) {
+  const [label, value] = String(text || '').split(' ')
+  return {
+    label: label || '-',
+    value: value || '0',
+  }
 }
 
 type GameSurfaceState = {
@@ -90,6 +124,13 @@ type GameSurfaceState = {
   oppDeckText: string
   myGraveText: string
   oppGraveText: string
+  myBanishText: string
+  oppBanishText: string
+  myGraveActive: boolean
+  oppGraveActive: boolean
+  myBanishActive: boolean
+  oppBanishActive: boolean
+  stackActive: boolean
   endButtonLabel: string
   endButtonDisabled: boolean
   passButtonLabel: string
@@ -103,15 +144,20 @@ type GameSurfaceState = {
   endOverlayText: string
   graveVisible: boolean
   graveTitle: string
+  stackVisible: boolean
+  stackEntries: GameStackEntryState[]
   cardOverlayVisible: boolean
-  cardOverlayPreviewHtml: string
-  cardOverlayMetaHtml: string
-  cardOverlayKeywordsHtml: string
+  cardOverlayCardKey: string
   effectPickVisible: boolean
   effectPickTitle: string
   effectPickGuide: string
   effectPickCards: GameOverlayCardState[]
   graveCards: GameOverlayCardState[]
+  queryVisible: boolean
+  queryTitle: string
+  queryMessage: string
+  queryOptions: GameQueryOptionState[]
+  activeActions: GameActiveActionState[]
   myMonsterSlots: GameSlotState[]
   oppMonsterSlots: GameSlotState[]
   mySpellSlots: GameSlotState[]
@@ -158,14 +204,14 @@ const DEFAULT_SURFACE_STATE: GameSurfaceState = {
   graveVisible: false,
   graveTitle: '무덤',
   cardOverlayVisible: false,
-  cardOverlayPreviewHtml: '',
-  cardOverlayMetaHtml: '',
-  cardOverlayKeywordsHtml: '',
+  cardOverlayCardKey: '',
   effectPickVisible: false,
   effectPickTitle: '효과 카드 선택',
   effectPickGuide: '카드를 눌러 선택해줘.',
   effectPickCards: [],
   graveCards: [],
+  stackVisible: false,
+  stackEntries: [],
   myMonsterSlots: [],
   oppMonsterSlots: [],
   mySpellSlots: [],
@@ -174,6 +220,53 @@ const DEFAULT_SURFACE_STATE: GameSurfaceState = {
   handOverlapPx: 0,
   handOverlapEnabled: false,
   handEmptyText: '',
+  myBanishText: '제외 0',
+  oppBanishText: '제외 0',
+  myGraveActive: false,
+  oppGraveActive: false,
+  myBanishActive: false,
+  oppBanishActive: false,
+  stackActive: false,
+  queryVisible: false,
+  queryTitle: '확인',
+  queryMessage: '',
+  queryOptions: [],
+  activeActions: [],
+}
+
+function normalizeEffectText(raw = '') {
+  return String(raw || '')
+    .replace(/([^\s(])\(/g, '$1 (')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
+function cardTypeLabel(def?: CardDef | null) {
+  return def?.type === 'monster' ? '유닛' : '마법'
+}
+
+function extractKeywordTokens(def?: CardDef | null) {
+  const shared = getSharedCardsGlobal()
+  const terms = shared?.TERMS || {}
+  const out = new Set<string>()
+  const raw = String(def?.effect || '')
+  const regex = /<([^>]+)>/g
+  let match: RegExpExecArray | null
+  while ((match = regex.exec(raw)) !== null) {
+    const src = String(match[1] || '')
+    for (const part of src.split('/')) {
+      const token = String(part || '')
+        .split(':')[0]
+        .replace(/\s*·\s*마나\s*\d+$/i, '')
+        .trim()
+      if (token) out.add(token)
+    }
+  }
+  if (def?.guard && terms.guard) out.add(terms.guard)
+  for (const value of [def?.race, def?.theme, def?.element]) {
+    if (value) out.add(String(value))
+  }
+  return Array.from(out)
 }
 
 function ensureStyles() {
@@ -270,6 +363,7 @@ export function GamePage() {
         data-inspect-key={slot.inspectKey || undefined}
         data-inspect-unit={slot.inspectUnit || undefined}
         aria-disabled={!clickable}
+        title={slot.inspectUnit || slot.inspectKey ? '클릭: 선택 또는 행동 · 더블 클릭: 카드 상세' : undefined}
         onClick={clickable ? () => invokeSurfaceAction(slot.action) : undefined}
         onDoubleClick={slot.doubleAction ? () => invokeSurfaceAction(slot.doubleAction) : undefined}
         dangerouslySetInnerHTML={{ __html: slot.html }}
@@ -279,22 +373,42 @@ export function GamePage() {
 
   const actionGuide = (() => {
     if (surfaceState.uiLocked) {
-      return '상태를 동기화하고 있어요. 잠시만 기다려주세요.'
+      return '상태를 동기화하는 중입니다.'
     }
 
     switch (hudState.phaseText) {
       case '드로우':
-        return '드로우가 끝나면 메인 단계로 넘어가 배치를 준비합니다.'
+        return '드로우 후 메인으로 넘어갑니다.'
       case '메인':
-        return '손패를 먼저 고른 뒤, 필드 슬롯을 눌러 유닛이나 마법을 배치하세요.'
+        return '손패를 고른 뒤 슬롯을 눌러 배치하세요.'
       case '배틀':
-        return '내 유닛을 고른 뒤 상대 유닛이나 본체 공격 버튼을 선택하세요.'
+        return '내 유닛을 고른 뒤 공격 대상을 선택하세요.'
       case '엔드':
-        return '이번 턴 행동을 마쳤다면 턴 종료로 넘어가면 됩니다.'
+        return '행동을 마쳤다면 턴을 넘기세요.'
       default:
         return hudState.noticeText
     }
   })()
+
+  const phaseSteps = ['드로우', '메인', '배틀', '엔드']
+  const currentPhaseIndex = phaseSteps.indexOf(hudState.phaseText)
+  const myDeck = renderPileText(surfaceState.myDeckText)
+  const myGrave = renderPileText(surfaceState.myGraveText)
+  const myBanish = renderPileText(surfaceState.myBanishText)
+  const oppDeck = renderPileText(surfaceState.oppDeckText)
+  const oppGrave = renderPileText(surfaceState.oppGraveText)
+  const oppBanish = renderPileText(surfaceState.oppBanishText)
+  const shared = getSharedCardsGlobal()
+  const defs = shared?.CARD_DEFS || {}
+  const keywordText = shared?.KEYWORD_TEXT || {}
+  const overlayCardKey = normalizeCardKey(surfaceState.cardOverlayCardKey)
+  const overlayCardDef = overlayCardKey ? defs[overlayCardKey] : undefined
+  const overlayKeywords = overlayCardDef
+    ? extractKeywordTokens(overlayCardDef).map((name) => ({
+        name,
+        description: keywordText[name] || '카드 효과 텍스트 문맥에 따라 처리됩니다.',
+      }))
+    : []
 
   const renderSummary = useCallback((summary: PlayerSummary, scope: 'me' | 'opp') => (
     <>
@@ -385,8 +499,10 @@ export function GamePage() {
     const hasOverlay =
       surfaceState.endOverlayVisible ||
       surfaceState.graveVisible ||
+      surfaceState.stackVisible ||
       surfaceState.cardOverlayVisible ||
-      surfaceState.effectPickVisible
+      surfaceState.effectPickVisible ||
+      surfaceState.queryVisible
 
     document.body.classList.toggle('nulsight-game-overlay-open', hasOverlay)
 
@@ -398,6 +514,8 @@ export function GamePage() {
     surfaceState.effectPickVisible,
     surfaceState.endOverlayVisible,
     surfaceState.graveVisible,
+    surfaceState.queryVisible,
+    surfaceState.stackVisible,
   ])
 
   if (!roomId || !agentId) {
@@ -419,7 +537,7 @@ export function GamePage() {
           <div className="game-status-strip__main">
             <div className="game-status-strip__identity">
               <p className="nulsight-kicker hud-kicker">DUEL</p>
-              <h1 className="game-section-title">Nulsight Match</h1>
+              <h1 className="game-section-title">Nulsight Duel</h1>
             </div>
             <div className={`hud-turn ${hudState.turnTone === 'me' ? 'is-me' : 'is-opp'}`}>
               {hudState.turnText}
@@ -443,6 +561,20 @@ export function GamePage() {
               ))}
             </div>
           </div>
+          <div className="hud-phase-track" aria-label="페이즈 진행">
+            {phaseSteps.map((step, index) => {
+              const active = currentPhaseIndex === index
+              const passed = currentPhaseIndex > index
+              return (
+                <span
+                  key={step}
+                  className={`hud-phase-pill${active ? ' is-active' : ''}${passed ? ' is-passed' : ''}`}
+                >
+                  {step}
+                </span>
+              )
+            })}
+          </div>
         </section>
 
         <section ref={duelStageRef} className="duel-stage" aria-label="듀얼 스테이지">
@@ -457,27 +589,40 @@ export function GamePage() {
               <div className="field-matrix">
                 <div className="field-main">
                   <div className="zone-row">
-                    <div id="oppMon" className="slots monster">
-                      {surfaceState.oppMonsterSlots.map(renderSlotButton)}
+                    <div id="oppSpell" className="slots spell">
+                      {surfaceState.oppSpellSlots.map(renderSlotButton)}
                     </div>
                   </div>
                   <div className="zone-row">
-                    <div id="oppSpell" className="slots spell">
-                      {surfaceState.oppSpellSlots.map(renderSlotButton)}
+                    <div id="oppMon" className="slots monster">
+                      {surfaceState.oppMonsterSlots.map(renderSlotButton)}
                     </div>
                   </div>
                 </div>
                 <div className="field-side">
                   <button
                     id="oppGrave"
-                    className="utility-zone"
+                    className={`utility-zone${surfaceState.oppGraveActive ? ' is-live' : ''}`}
                     type="button"
                     onClick={() => invoke('openGrave', 'opp')}
+                    title="상대 무덤 보기"
                   >
-                    {surfaceState.oppGraveText}
+                    <span className="utility-zone__label">{oppGrave.label}</span>
+                    <span className="utility-zone__value">{oppGrave.value}</span>
                   </button>
-                  <button id="oppDeck" className="utility-zone" type="button">
-                    {surfaceState.oppDeckText}
+                  <button id="oppDeck" className="utility-zone" type="button" title="상대 덱 수">
+                    <span className="utility-zone__label">{oppDeck.label}</span>
+                    <span className="utility-zone__value">{oppDeck.value}</span>
+                  </button>
+                  <button
+                    id="oppBanish"
+                    className={`utility-zone${surfaceState.oppBanishActive ? ' is-live' : ''}`}
+                    type="button"
+                    onClick={() => invoke('openBanish', 'opp')}
+                    title="상대 제외 보기"
+                  >
+                    <span className="utility-zone__label">{oppBanish.label}</span>
+                    <span className="utility-zone__value">{oppBanish.value}</span>
                   </button>
                 </div>
               </div>
@@ -503,33 +648,69 @@ export function GamePage() {
                 <p className="game-toolbar__guide">{actionGuide}</p>
               </div>
               <div className="game-toolbar__actions">
-                <button
-                  id="btnConcede"
-                  className="nulsight-button"
-                  type="button"
-                  disabled={surfaceState.concedeDisabled || surfaceState.uiLocked}
-                  onClick={() => invoke('concedeAndExit')}
-                >
-                  항복
-                </button>
-                <button
-                  id="btnStack"
-                  className="nulsight-button"
-                  type="button"
-                  disabled={surfaceState.passButtonDisabled || surfaceState.uiLocked}
-                  onClick={() => invoke('act', 'priority_pass')}
-                >
-                  {surfaceState.passButtonLabel}
-                </button>
-                <button
-                  id="btnEnd"
-                  className="nulsight-button nulsight-button--primary"
-                  type="button"
-                  disabled={surfaceState.endButtonDisabled || surfaceState.uiLocked}
-                  onClick={() => invoke('act', 'end_phase')}
-                >
-                  {surfaceState.endButtonLabel}
-                </button>
+                <div className="game-toolbar__cluster">
+                  <span className="game-toolbar__label">즉시 효과</span>
+                  <div className="game-toolbar__group game-toolbar__group--active">
+                    {surfaceState.activeActions.length > 0 ? (
+                      surfaceState.activeActions.map((item) => (
+                        <button
+                          key={item.key}
+                          className="nulsight-button nulsight-button--primary"
+                          type="button"
+                          disabled={surfaceState.uiLocked || item.disabled}
+                          title={item.detail || item.label}
+                          onClick={() => invokeSurfaceAction(item.action)}
+                        >
+                          {item.label}
+                        </button>
+                      ))
+                    ) : (
+                      <span className="game-toolbar__empty">사용 가능한 효과 없음</span>
+                    )}
+                  </div>
+                </div>
+                <div className="game-toolbar__cluster">
+                  <span className="game-toolbar__label">기본 조작</span>
+                  <div className="game-toolbar__group">
+                    <button
+                      id="btnStackPanel"
+                      className={`nulsight-button${surfaceState.stackActive ? ' nulsight-button--primary' : ''}`}
+                      type="button"
+                      disabled={surfaceState.stackEntries.length === 0}
+                      onClick={() => invoke('openStackOverlay')}
+                      title="현재 스택 확인"
+                    >
+                      스택 보기
+                    </button>
+                    <button
+                      id="btnStack"
+                      className="nulsight-button"
+                      type="button"
+                      disabled={surfaceState.passButtonDisabled || surfaceState.uiLocked}
+                      onClick={() => invoke('act', 'priority_pass')}
+                    >
+                      {surfaceState.passButtonLabel}
+                    </button>
+                    <button
+                      id="btnEnd"
+                      className="nulsight-button nulsight-button--primary"
+                      type="button"
+                      disabled={surfaceState.endButtonDisabled || surfaceState.uiLocked}
+                      onClick={() => invoke('act', 'end_phase')}
+                    >
+                      {surfaceState.endButtonLabel}
+                    </button>
+                    <button
+                      id="btnConcede"
+                      className="nulsight-button"
+                      type="button"
+                      disabled={surfaceState.concedeDisabled || surfaceState.uiLocked}
+                      onClick={() => invoke('concedeAndExit')}
+                    >
+                      항복
+                    </button>
+                  </div>
+                </div>
               </div>
             </section>
 
@@ -554,14 +735,27 @@ export function GamePage() {
                 <div className="field-side">
                   <button
                     id="myGrave"
-                    className="utility-zone"
+                    className={`utility-zone${surfaceState.myGraveActive ? ' is-live' : ''}`}
                     type="button"
                     onClick={() => invoke('openGrave', 'me')}
+                    title="내 무덤 보기"
                   >
-                    {surfaceState.myGraveText}
+                    <span className="utility-zone__label">{myGrave.label}</span>
+                    <span className="utility-zone__value">{myGrave.value}</span>
                   </button>
-                  <button id="myDeck" className="utility-zone" type="button">
-                    {surfaceState.myDeckText}
+                  <button id="myDeck" className="utility-zone" type="button" title="내 덱 수">
+                    <span className="utility-zone__label">{myDeck.label}</span>
+                    <span className="utility-zone__value">{myDeck.value}</span>
+                  </button>
+                  <button
+                    id="myBanish"
+                    className={`utility-zone${surfaceState.myBanishActive ? ' is-live' : ''}`}
+                    type="button"
+                    onClick={() => invoke('openBanish', 'me')}
+                    title="내 제외 보기"
+                  >
+                    <span className="utility-zone__label">{myBanish.label}</span>
+                    <span className="utility-zone__value">{myBanish.value}</span>
                   </button>
                 </div>
               </div>
@@ -597,6 +791,7 @@ export function GamePage() {
                     data-hand-index={card.index}
                     data-inspect-key={card.cardKey}
                     style={{ '--hand-i': card.index } as React.CSSProperties}
+                    title="클릭: 선택 · 다시 클릭/더블 클릭: 카드 상세"
                     onClick={() => handleHandCardClick(card.index)}
                     onDoubleClick={() => invoke('openCardOverlayByKey', card.cardKey)}
                     dangerouslySetInnerHTML={{ __html: card.html }}
@@ -609,6 +804,41 @@ export function GamePage() {
           </section>
         </section>
       </main>
+
+      <section
+        id="stackOverlay"
+        className={`card-overlay${surfaceState.stackVisible ? '' : ' hidden'}`}
+        aria-label="스택 상태"
+        aria-modal="true"
+        role="dialog"
+      >
+        <div className="card-overlay__backdrop" onClick={() => invoke('closeStackOverlay')} />
+        <article className="card-overlay__panel stack-overlay__panel">
+          <header className="card-overlay__head">
+            <strong>스택</strong>
+            <button className="nulsight-button" type="button" onClick={() => invoke('closeStackOverlay')}>
+              닫기
+            </button>
+          </header>
+          <div className="stack-overlay__list">
+            {surfaceState.stackEntries.length > 0 ? (
+              surfaceState.stackEntries.map((entry) => (
+                <article key={entry.key} className="stack-entry">
+                  <div className="stack-entry__card">
+                    <GameCardSurface cardKey={entry.cardKey} />
+                  </div>
+                  <div className="stack-entry__body">
+                    <div className="stack-entry__actor">{entry.actorText}</div>
+                    <div className="stack-entry__summary">{entry.summaryText}</div>
+                  </div>
+                </article>
+              ))
+            ) : (
+              <div className="muted">대기 중인 스택이 없어요.</div>
+            )}
+          </div>
+        </article>
+      </section>
 
       <div id="gameEndOverlay" className={`game-end-overlay${surfaceState.endOverlayVisible ? '' : ' hidden'}`}>
         <div className="game-end-box">
@@ -623,34 +853,42 @@ export function GamePage() {
         </div>
       </div>
 
-      <aside id="graveDrawer" className={`grave-drawer${surfaceState.graveVisible ? '' : ' hidden'}`} aria-label="무덤 카드 목록">
-        <div className="grave-drawer__head">
-          <strong id="graveDrawerTitle">{surfaceState.graveTitle}</strong>
-          <button className="nulsight-button" type="button" onClick={() => invoke('closeGrave')}>
-            닫기
-          </button>
-        </div>
-        <div
-          id="graveList"
-          className="grave-drawer__list"
-        >
-          {surfaceState.graveCards.length > 0 ? (
-            surfaceState.graveCards.map((card) => (
-              <button
-                key={card.key}
-                className={card.className}
-                type="button"
-                data-inspect-key={card.cardKey}
-                onClick={() => invoke('openCardOverlayByKey', card.cardKey)}
-                onDoubleClick={() => invoke('openCardOverlayByKey', card.cardKey)}
-                dangerouslySetInnerHTML={{ __html: card.html }}
-              />
-            ))
-          ) : (
-            <div className="muted">무덤이 비어 있어요.</div>
-          )}
-        </div>
-      </aside>
+      <section
+        id="graveDrawer"
+        className={`card-overlay${surfaceState.graveVisible ? '' : ' hidden'}`}
+        aria-label="카드 더미 목록"
+        aria-modal="true"
+        role="dialog"
+      >
+        <div className="card-overlay__backdrop" onClick={() => invoke('closeGrave')} />
+        <article className="card-overlay__panel pile-overlay__panel">
+          <header className="card-overlay__head">
+            <strong id="graveDrawerTitle">{surfaceState.graveTitle}</strong>
+            <button className="nulsight-button" type="button" onClick={() => invoke('closeGrave')}>
+              닫기
+            </button>
+          </header>
+          <div id="graveList" className="pile-overlay__list">
+            {surfaceState.graveCards.length > 0 ? (
+              surfaceState.graveCards.map((card) => (
+                <button
+                  key={card.key}
+                  className={card.className}
+                  type="button"
+                  data-inspect-key={card.cardKey}
+                  title="클릭: 카드 상세"
+                  onClick={() => invoke('openCardOverlayByKey', card.cardKey)}
+                  onDoubleClick={() => invoke('openCardOverlayByKey', card.cardKey)}
+                >
+                  <GameCardSurface cardKey={card.cardKey} />
+                </button>
+              ))
+            ) : (
+              <div className="muted">카드가 없습니다.</div>
+            )}
+          </div>
+        </article>
+      </section>
 
       <section
         id="cardInspectOverlay"
@@ -668,24 +906,36 @@ export function GamePage() {
             </button>
           </header>
           <div className="card-overlay__content">
-            <div
-              id="cardOverlayPreview"
-              className="card-overlay__preview"
-              dangerouslySetInnerHTML={{ __html: surfaceState.cardOverlayPreviewHtml }}
-            />
+            <div id="cardOverlayPreview" className="card-overlay__preview">
+              {overlayCardKey ? (
+                <div className="card-overlay__preview-card">
+                  <GameCardSurface cardKey={overlayCardKey} />
+                </div>
+              ) : null}
+            </div>
             <div className="card-overlay__body">
-              <div
-                id="cardOverlayMeta"
-                className="card-overlay__meta"
-                dangerouslySetInnerHTML={{ __html: surfaceState.cardOverlayMetaHtml }}
-              />
+              <div id="cardOverlayMeta" className="card-overlay__meta">
+                <div className="card-overlay__title">{overlayCardDef?.name || overlayCardKey}</div>
+                <div className="card-overlay__line">종류: {cardTypeLabel(overlayCardDef)}</div>
+                <div className="card-overlay__line">코스트: {overlayCardDef?.cost ?? 0}</div>
+                <div className="card-overlay__effect">
+                  {normalizeEffectText(overlayCardDef?.effect || '') || '효과 없음'}
+                </div>
+              </div>
               <div>
                 <h3 className="card-overlay__sub">키워드 설명</h3>
-                <div
-                  id="cardOverlayKeywords"
-                  className="card-overlay__keywords"
-                  dangerouslySetInnerHTML={{ __html: surfaceState.cardOverlayKeywordsHtml }}
-                />
+                <div id="cardOverlayKeywords" className="card-overlay__keywords">
+                  {overlayKeywords.length > 0 ? (
+                    overlayKeywords.map((entry) => (
+                      <div key={entry.name} className="card-overlay__kw">
+                        <strong>{entry.name}</strong>
+                        <span>{entry.description}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="muted">키워드가 없어요.</div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -722,18 +972,48 @@ export function GamePage() {
                   type="button"
                   data-pick-index={card.pickIndex}
                   data-inspect-key={card.cardKey}
+                  title="클릭: 이 카드 선택 · 더블 클릭: 카드 상세"
                   onClick={() => {
                     if (typeof card.pickIndex === 'number') {
                       handleEffectPickSelect(card.pickIndex)
                     }
                   }}
                   onDoubleClick={() => invoke('openCardOverlayByKey', card.cardKey)}
-                  dangerouslySetInnerHTML={{ __html: card.html }}
-                />
+                >
+                  <GameCardSurface cardKey={card.cardKey} />
+                </button>
               ))
             ) : (
               <div className="muted">선택 가능한 카드가 없어요.</div>
             )}
+          </div>
+        </article>
+      </section>
+
+      <section
+        id="queryOverlay"
+        className={`card-overlay${surfaceState.queryVisible ? '' : ' hidden'}`}
+        aria-label="질의"
+        aria-modal="true"
+        role="dialog"
+      >
+        <div className="card-overlay__backdrop" />
+        <article className="card-overlay__panel query-overlay__panel">
+          <header className="card-overlay__head">
+            <strong>{surfaceState.queryTitle}</strong>
+          </header>
+          <p className="query-overlay__message">{surfaceState.queryMessage}</p>
+          <div className="query-overlay__actions">
+            {surfaceState.queryOptions.map((option) => (
+              <button
+                key={`${option.value}-${option.label}`}
+                className={`nulsight-button${option.tone === 'primary' ? ' nulsight-button--primary' : ''}`}
+                type="button"
+                onClick={() => invoke('respondQueryOverlay', option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         </article>
       </section>

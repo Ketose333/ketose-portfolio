@@ -27,10 +27,13 @@ body {
   flex: 1 0 auto;
   display: flex;
   flex-direction: column;
+  padding-top: 24px;
 }
 
 .nulsight-app-shell__content--game {
   min-height: 100dvh;
+  padding-top: 18px;
+  padding-bottom: 18px;
 }
 
 .bp-header__nav {
@@ -57,7 +60,7 @@ body {
 .nulsight-shell {
   width: min(1180px, calc(100vw - 48px));
   margin: 0 auto;
-  padding: 40px 0 64px;
+  padding: 0 0 64px;
 }
 
 .nulsight-hero {
@@ -130,12 +133,14 @@ body {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
   gap: 20px;
+  align-items: start;
 }
 
 .nulsight-page-main,
 .nulsight-page-side {
   display: grid;
   gap: 20px;
+  align-content: start;
 }
 
 .nulsight-card {
@@ -147,6 +152,7 @@ body {
 .nulsight-card--stack {
   display: grid;
   gap: 14px;
+  align-content: start;
 }
 
 .nulsight-card--wide {
@@ -164,6 +170,8 @@ body {
 }
 
 .nulsight-panel {
+  display: grid;
+  gap: 18px;
   border: 1px solid var(--theme-shell-border);
   background: var(--theme-panel);
   padding: 24px;
@@ -174,7 +182,9 @@ body {
 }
 
 .nulsight-panel__head {
-  margin-bottom: 16px;
+  margin-bottom: 0;
+  display: grid;
+  gap: 6px;
 }
 
 .nulsight-panel__head > :last-child {
@@ -202,15 +212,8 @@ body {
 .nulsight-shell--game {
   width: min(1180px, calc(100vw - 40px));
   min-height: 100dvh;
-  padding-top: 20px;
-  padding-bottom: 28px;
-}
-
-@media (min-height: 860px) {
-  .nulsight-shell--game {
-    display: grid;
-    align-content: center;
-  }
+  padding-top: 0;
+  padding-bottom: 18px;
 }
 
 body.nulsight-game-overlay-open {
@@ -297,7 +300,7 @@ body.nulsight-game-overlay-open {
 .nulsight-shell input::placeholder,
 .nulsight-shell textarea::placeholder {
   color: var(--theme-muted);
-  opacity: 0.95;
+  opacity: var(--theme-alpha-strong);
 }
 
 .nulsight-shell input:focus-visible,
@@ -310,14 +313,14 @@ body.nulsight-game-overlay-open {
 
 .nulsight-shell input[readonly],
 .nulsight-shell textarea[readonly] {
-  opacity: 0.95;
+  opacity: var(--theme-alpha-strong);
   cursor: default;
 }
 
 .nulsight-shell input:disabled,
 .nulsight-shell textarea:disabled,
 .nulsight-shell select:disabled {
-  opacity: 0.62;
+  opacity: var(--theme-alpha-disabled);
   cursor: not-allowed;
 }
 
@@ -325,7 +328,7 @@ body.nulsight-game-overlay-open {
 .bp-header-btn:disabled,
 .game-toolbar button:disabled,
 .attack-agent:disabled {
-  opacity: 0.56;
+  opacity: var(--theme-alpha-disabled);
   cursor: not-allowed;
   transform: none;
 }
@@ -346,6 +349,10 @@ body.nulsight-game-overlay-open {
   margin-top: 16px;
 }
 
+.nulsight-note-stack--tight {
+  margin-top: 12px;
+}
+
 .nulsight-status,
 .nulsight-note {
   margin: 0;
@@ -362,14 +369,103 @@ body.nulsight-game-overlay-open {
   margin-top: 16px;
 }
 
+.nulsight-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--theme-overlay);
+}
+
+.nulsight-dialog-backdrop.hidden {
+  display: none;
+}
+
+.nulsight-dialog-backdrop--system {
+  z-index: 10140;
+}
+
+.nulsight-dialog {
+  width: min(520px, calc(100vw - 32px));
+  display: grid;
+  gap: 16px;
+  border: 1px solid var(--theme-shell-border);
+  background: linear-gradient(180deg, var(--theme-panel-strong), var(--theme-panel));
+  padding: 24px;
+  box-shadow: var(--theme-elevation-shadow);
+}
+
+.nulsight-dialog--system {
+  width: min(560px, calc(100vw - 32px));
+}
+
+.nulsight-loading-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10120;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--theme-overlay-strong);
+}
+
+.nulsight-loading-backdrop.hidden {
+  display: none;
+}
+
+.nulsight-loading-panel {
+  min-width: min(320px, calc(100vw - 48px));
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid var(--theme-shell-border);
+  background: linear-gradient(180deg, var(--theme-panel-strong), var(--theme-panel));
+  box-shadow: var(--theme-elevation-shadow);
+}
+
+.nulsight-loading-panel__text {
+  color: var(--theme-text-strong);
+  font-size: var(--fs-min-readable);
+  text-align: center;
+}
+
 .nulsight-code-box {
-  margin-bottom: 16px;
+  margin: 0;
+  min-width: 0;
   padding: 16px;
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-elevated);
   font-family: var(--theme-font-display);
-  font-size: clamp(1.9rem, 4vw, 3rem);
+  font-size: clamp(1.7rem, 3.4vw, 2.6rem);
   letter-spacing: 0.16em;
+}
+
+.nulsight-room-code {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--theme-border);
+  background: var(--theme-bg-elevated);
+}
+
+.nulsight-room-code__label {
+  color: var(--theme-muted);
+  font-size: 0.9rem;
+}
+
+.nulsight-room-code__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.nulsight-room-code__copy {
+  min-width: 112px;
+  align-self: stretch;
 }
 
 .nulsight-kv-list {
@@ -385,6 +481,11 @@ body.nulsight-game-overlay-open {
   background: var(--theme-bg-elevated);
 }
 
+.nulsight-kv-list div {
+  display: grid;
+  gap: 4px;
+}
+
 .nulsight-kv-list dt,
 .nulsight-mini-card h3 {
   margin: 0 0 6px;
@@ -395,6 +496,18 @@ body.nulsight-game-overlay-open {
 .nulsight-kv-list dd,
 .nulsight-mini-card p {
   margin: 0;
+}
+
+.nulsight-kv-list dd {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.nulsight-mini-card {
+  display: grid;
+  gap: 4px;
+  min-height: 88px;
+  align-content: start;
 }
 
 .nulsight-mini-grid {
@@ -478,10 +591,18 @@ body.nulsight-game-overlay-open {
     grid-template-columns: 1fr;
   }
 
+  .nulsight-room-code__row {
+    grid-template-columns: 1fr;
+  }
+
   .nulsight-shell,
   .nulsight-shell--narrow {
     width: min(100vw - 28px, 1180px);
-    padding-top: 24px;
+    padding-top: 0;
     padding-bottom: 36px;
+  }
+
+  .nulsight-dialog {
+    padding: 20px;
   }
 }

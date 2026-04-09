@@ -1,4 +1,5 @@
 const { loadKV, canUseKV, tryKV } = require('./kv-safe');
+const { buildStarterDeck } = require('./starter-deck');
 
 const kv = loadKV();
 const mem = globalThis.__nulsight_deck_store || new Map();
@@ -27,17 +28,30 @@ function makeSlotId() {
   return `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
-function defaultModel(deck = []) {
+function starterDeck() {
+  return buildStarterDeck();
+}
+
+function shouldHydrateStarterSlot(slot, index, totalSlots) {
+  const normalizedName = String(slot?.name || '').trim();
+  if (!Array.isArray(slot?.deck) || slot.deck.length > 0) return false;
+  if (String(slot?.source || '') === 'starter') return true;
+  if (normalizedName === '기본 덱') return true;
+  return totalSlots === 1 && index === 0;
+}
+
+function defaultModel(deck = null) {
   const slotId = makeSlotId();
+  const resolvedDeck = Array.isArray(deck) && deck.length ? deck : starterDeck();
   return {
     activeSlotId: slotId,
-    slots: [{ id: slotId, name: '기본 덱', deck: normalizeDeck(deck), updatedAt: nowIso(), source: 'manual' }]
+    slots: [{ id: slotId, name: '기본 덱', deck: normalizeDeck(resolvedDeck), updatedAt: nowIso(), source: 'starter' }]
   };
 }
 
 function ensureModel(raw) {
   const obj = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
-  const slots = Array.isArray(obj.slots)
+  const rawSlots = Array.isArray(obj.slots)
     ? obj.slots.map((s, i) => ({
       id: String(s?.id || `slot_${i + 1}`),
       name: String(s?.name || `덱 ${i + 1}`),
@@ -46,7 +60,12 @@ function ensureModel(raw) {
       source: String(s?.source || 'manual')
     })).slice(0, MAX_SLOTS)
     : [];
-  if (!slots.length) return defaultModel([]);
+  const slots = rawSlots.map((slot, index) => (
+    shouldHydrateStarterSlot(slot, index, rawSlots.length)
+      ? { ...slot, deck: starterDeck(), source: 'starter', updatedAt: slot.updatedAt || nowIso() }
+      : slot
+  ));
+  if (!slots.length) return defaultModel();
   const activeSlotId = slots.some((s) => s.id === obj.activeSlotId) ? String(obj.activeSlotId) : slots[0].id;
   return { activeSlotId, slots };
 }

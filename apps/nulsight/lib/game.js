@@ -1,6 +1,7 @@
 const sharedCards = require('./generated/shared-cards.cjs');
 const { CARD_DEFS, extractCardKey, normalizeCardKey, getCardDef, getCardCost, getCardType, isNormalSpell, getStackDefaultAction } = sharedCards;
 const { RULES_CONST } = require('./rules-const');
+const { buildStarterDeck } = require('./starter-deck');
 
 function clone(x) { return JSON.parse(JSON.stringify(x)); }
 
@@ -14,9 +15,7 @@ function shuffleDeck(deck) {
 }
 
 function mkDeck() {
-  const pool = Object.keys(CARD_DEFS);
-  const deck = pool.flatMap((k) => Array(3).fill(k));
-  return shuffleDeck(deck);
+  return shuffleDeck(buildStarterDeck());
 }
 
 function drawOne(state, agentId) {
@@ -371,18 +370,21 @@ function runCardEffects(state, actorId, cardKey, timing, context = {}) {
   if (!targets.length) return;
 
   const selected = Array.isArray(context?.selectedEffectIndexes) ? context.selectedEffectIndexes : null;
+  let didResolve = false;
   for (let i = 0; i < targets.length; i++) {
     const e = targets[i];
     const mode = e?.mode || 'forced';
     if (mode === 'optional') {
-      if (selected && !selected.includes(i)) continue;
+      if (!selected || !selected.includes(i)) continue;
     }
     if (!isConditionMet(state, actorId, e.condition || {}, context)) continue;
     if (!tryPayCost(state, actorId, e.cost || {})) continue;
     runEffectAction(state, actorId, cardKey, e.action || {}, { ...context, effectIndex: i });
+    didResolve = true;
   }
 
-  markEffectUsed(state, actorId, usageKey);
+  if (didResolve) markEffectUsed(state, actorId, usageKey);
+  return didResolve;
 }
 
 
@@ -575,6 +577,57 @@ function applyAction(state, action) {
 
     // 스택이 남아 있을 때만 우선권 패스 루프를 연다.
     s.pendingAdvance = true;
+    s.priority.holderId = s.activeAgentId;
+    s.priority.passCount = 0;
+    cleanupOrphanEquips(s);
+    return { ok: true, state: s };
+  }
+
+  if (action.type === 'active_effect') {
+    if (s.phase !== 'main') return { ok: false, reason: 'main only', state: s };
+    if ((s.stack || []).length > 0) return { ok: false, reason: 'stack not empty', state: s };
+
+    let key = '';
+    let context = {
+      targetUnitId: action.payload?.targetUnitId,
+      selectedEffectIndexes: action.payload?.selectedEffectIndexes,
+      selectedEffectCardChoices: action.payload?.selectedEffectCardChoices,
+      effectUsageKey: null
+    };
+
+    const unitId = String(action.payload?.unitId || '').trim();
+    if (unitId) {
+      const unit = s.units?.[unitId];
+      if (!unit || unit.ownerId !== action.actorId) return { ok: false, reason: 'invalid target', state: s };
+      key = normalizeCardKey(unit.key);
+      context = {
+        ...context,
+        unitId,
+        effectUsageKey: `active:unit:${unitId}`
+      };
+    } else {
+      const spellZoneIndex = Number(action.payload?.spellZoneIndex);
+      if (!Number.isInteger(spellZoneIndex) || spellZoneIndex < 0 || spellZoneIndex >= actor.spellZone.length) {
+        return { ok: false, reason: 'invalid target', state: s };
+      }
+      const slot = actor.spellZone[spellZoneIndex];
+      key = spellSlotKey(slot);
+      if (!key) return { ok: false, reason: 'invalid target', state: s };
+      context = {
+        ...context,
+        spellZoneIndex,
+        effectUsageKey: `active:spell:${action.actorId}:${spellZoneIndex}`
+      };
+    }
+
+    const def = getCardDef(key) || {};
+    const hasActive = Array.isArray(def.effects) && def.effects.some((e) => e && e.timing === 'active');
+    if (!hasActive) return { ok: false, reason: 'unsupported action', state: s };
+
+    const didResolve = runCardEffects(s, action.actorId, key, 'active', context);
+    if (!didResolve) return { ok: false, reason: 'unsupported action', state: s };
+
+    s.pendingAdvance = false;
     s.priority.holderId = s.activeAgentId;
     s.priority.passCount = 0;
     cleanupOrphanEquips(s);

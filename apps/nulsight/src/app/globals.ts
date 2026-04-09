@@ -1,5 +1,6 @@
 type SharedCardsGlobal = {
   TERMS?: Record<string, string>
+  KEYWORD_TEXT?: Record<string, string>
   CARD_DEFS?: Record<string, CardDef>
   CARD_RACES?: string[]
   CARD_THEMES?: string[]
@@ -21,6 +22,7 @@ export type CardDef = {
   cost?: number
   atk?: number
   hp?: number
+  guard?: boolean
   race?: string
   theme?: string
   element?: string

@@ -29,6 +29,7 @@ function toRoomStatePayload(room, opts = {}) {
   } = opts;
 
   const agents = Array.isArray(includeAgents) ? includeAgents : [];
+  const actualAgents = Array.isArray(room?.agents) ? room.agents : [];
   const live = isMatchLive(room);
   const resultGame = getResultSnapshot(room);
 
@@ -37,9 +38,9 @@ function toRoomStatePayload(room, opts = {}) {
     roomId: room?.roomId,
     ownerId: room?.ownerId,
     agents,
-    agentsCount: agents.length,
+    agentsCount: actualAgents.length,
     started: live,
-    joinable: agents.length < 2,
+    joinable: actualAgents.length < 2,
     game: hideGame ? null : (resultGame || room?.game || null),
     restricted: !!restricted,
     agentNames

@@ -96,7 +96,12 @@ module.exports = async (req, res) => {
     const room = { roomId, ownerId: agentId, agents: [agentId], game: null, createdAt: now, updatedAt: now, lastSeen: { [agentId]: now } };
     await setRoom(roomId, room);
     const agentNames = await buildAgentNames(room.agents);
-    return send(res, 201, { ok: true, roomId, agents: room.agents, agentNames });
+    return send(res, 201, toRoomStatePayload(room, {
+      includeAgents: room.agents,
+      hideGame: false,
+      restricted: false,
+      agentNames
+    }));
   }
 
   if (action === 'join') {

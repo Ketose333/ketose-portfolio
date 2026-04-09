@@ -1,5 +1,6 @@
 import type { PropsWithChildren } from 'react'
+import { UiOverlayProvider } from './UiOverlayProvider'
 
 export function AppProviders({ children }: PropsWithChildren) {
-  return <>{children}</>
+  return <UiOverlayProvider>{children}</UiOverlayProvider>
 }

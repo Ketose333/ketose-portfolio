@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { postJson, readJson } from '../app/api/client'
+import { ActionDialog } from '../app/components/ActionDialog'
+import { readClipboardTextSafe, writeClipboardTextSafe } from '../client/ui/clipboard'
 import { GatedPageNotice } from '../app/components/GatedPageNotice'
 import { getDeckCodecGlobal, getSharedCardsGlobal, normalizeCardKey, type CardDef } from '../app/globals'
 import type { AuthResponse } from '../app/types'
@@ -93,6 +95,7 @@ function renderDeckCard(def: CardDef | undefined, key: string, options?: { count
 
 export function DeckPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const shared = getSharedCardsGlobal()
   const deckCodec = getDeckCodecGlobal()
   const defs = shared?.CARD_DEFS || {}
@@ -112,6 +115,8 @@ export function DeckPage() {
   const [poolPage, setPoolPage] = useState(1)
   const [deckCode, setDeckCode] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
+  const [createSlotOpen, setCreateSlotOpen] = useState(false)
+  const [deleteSlotOpen, setDeleteSlotOpen] = useState(false)
 
   const counts = useMemo(() => makeCountMap(deck), [deck])
   const activeSlot = slots.find((slot) => slot.id === activeSlotId) || null
@@ -187,10 +192,10 @@ export function DeckPage() {
   }, [navigate])
 
   useEffect(() => {
-    const pending = localStorage.getItem('bp_import_deck_code') || ''
+    const pending = String((location.state as { importDeckCode?: string } | null)?.importDeckCode || '')
     if (!pending || !deckCodec?.decodeDeckCode) return
 
-    localStorage.removeItem('bp_import_deck_code')
+    navigate(location.pathname, { replace: true, state: null })
     setDeckCode(pending)
     const result = deckCodec.decodeDeckCode(pending)
     if (!result.ok || !result.deck) {
@@ -207,7 +212,7 @@ export function DeckPage() {
 
     updateDeck(importedDeck)
     setStatus('허브 덱을 현재 슬롯으로 불러왔습니다.')
-  }, [deckCodec])
+  }, [deckCodec, location.pathname, location.state, navigate])
 
   if (!booting && authRequired && !authUser) {
     return (
@@ -302,9 +307,8 @@ export function DeckPage() {
     }
   }
 
-  async function createSlot() {
+  async function createSlot(name: string) {
     if (!authUser?.username) return
-    const name = window.prompt('새 슬롯 이름을 입력해 주세요.', `덱 ${slots.length + 1}`)?.trim()
     if (!name) return
     setBusy('create-slot')
     try {
@@ -325,7 +329,6 @@ export function DeckPage() {
 
   async function deleteSlot() {
     if (!authUser?.username || !activeSlotId) return
-    if (!window.confirm('현재 슬롯을 삭제할까요?')) return
     setBusy('delete-slot')
     try {
       const response = await postJson<DeckSlotsResponse>('/api/deck?action=delete_slot', {
@@ -359,12 +362,18 @@ export function DeckPage() {
     }
     const code = deckCodec.encodeV2FromCounts(counts)
     setDeckCode(code)
-    try {
-      await navigator.clipboard.writeText(code)
-      setStatus('덱 코드를 생성하고 클립보드에 복사했습니다.')
-    } catch {
-      setStatus('덱 코드를 생성했습니다.')
+    const copied = await writeClipboardTextSafe(code)
+    setStatus(copied ? '덱 코드를 생성하고 클립보드에 복사했습니다.' : '덱 코드를 생성했습니다.')
+  }
+
+  async function pasteDeckCode() {
+    const nextCode = await readClipboardTextSafe()
+    if (!nextCode.trim()) {
+      setStatus('클립보드에 덱 코드가 없습니다.')
+      return
     }
+    setDeckCode(nextCode.trim())
+    setStatus('덱 코드를 붙여넣었습니다.')
   }
 
   function importDeckCode() {
@@ -409,10 +418,10 @@ export function DeckPage() {
               </option>
             ))}
           </select>
-          <button className="ghost nulsight-button" type="button" onClick={() => void createSlot()} disabled={busy !== null}>
+          <button className="ghost nulsight-button" type="button" onClick={() => setCreateSlotOpen(true)} disabled={busy !== null}>
             슬롯 추가
           </button>
-          <button className="ghost nulsight-button" type="button" onClick={() => void deleteSlot()} disabled={!activeSlotId || busy !== null}>
+          <button className="ghost nulsight-button" type="button" onClick={() => setDeleteSlotOpen(true)} disabled={!activeSlotId || busy !== null}>
             슬롯 삭제
           </button>
           <button className="ghost nulsight-button" type="button" onClick={() => void loadDeck()} disabled={busy !== null}>
@@ -434,10 +443,8 @@ export function DeckPage() {
         <div className="deck-share__head">
           <div>
             <p className="nulsight-kicker">SHARE</p>
-            <h2 className="t-section deck-pane-title">덱 레시피 코드</h2>
-            <div className="deck-pane-hint">코드 생성과 붙여넣기로 덱을 공유할 수 있습니다.</div>
+            <h2 className="t-section deck-pane-title">덱 코드</h2>
           </div>
-          <div className="deck-pane-hint">{activeSlot?.name || '슬롯 없음'}</div>
         </div>
         <textarea
           className="deck-code"
@@ -449,6 +456,9 @@ export function DeckPage() {
         <div className="deck-share__actions">
           <button className="ghost nulsight-button" type="button" onClick={() => void exportDeckCode()}>
             코드 생성
+          </button>
+          <button className="ghost nulsight-button" type="button" onClick={() => void pasteDeckCode()}>
+            코드 붙여넣기
           </button>
           <button className="primary nulsight-button nulsight-button--primary" type="button" onClick={importDeckCode}>
             코드 적용
@@ -462,7 +472,6 @@ export function DeckPage() {
             <div>
               <p className="nulsight-kicker">POOL</p>
               <h1 className="t-section deck-pane-title">카드 풀</h1>
-              <div className="deck-pane-hint">카드를 선택해 덱에 추가할 수 있습니다.</div>
             </div>
           </header>
 
@@ -503,6 +512,13 @@ export function DeckPage() {
                 ))}
               </select>
             </label>
+            <button
+              className="ghost nulsight-button"
+              type="button"
+              onClick={() => setFilter({ race: '', theme: '', element: '' })}
+            >
+              필터 초기화
+            </button>
           </div>
 
           <div className="pool-pager" aria-label="카드 풀 페이지 이동">
@@ -556,7 +572,6 @@ export function DeckPage() {
             <div>
               <p className="nulsight-kicker">CURRENT</p>
               <h2 className="t-section deck-pane-title">현재 덱</h2>
-              <div className="deck-pane-hint">구성을 확인한 뒤 저장해 주세요.</div>
             </div>
           </header>
           <div id="deck" aria-label="현재 덱 목록">
@@ -585,6 +600,36 @@ export function DeckPage() {
       <div className="nulsight-note-stack">
         <p className="nulsight-status">{status}</p>
       </div>
+
+      <ActionDialog
+        open={createSlotOpen}
+        kicker="DECK"
+        title="새 슬롯 만들기"
+        description="슬롯 이름을 정하면 빈 덱 슬롯이 추가됩니다."
+        inputLabel="슬롯 이름"
+        inputPlaceholder={`덱 ${slots.length + 1}`}
+        defaultValue={`덱 ${slots.length + 1}`}
+        maxLength={24}
+        confirmLabel="추가"
+        onCancel={() => setCreateSlotOpen(false)}
+        onConfirm={(value) => {
+          setCreateSlotOpen(false)
+          void createSlot(value || '')
+        }}
+      />
+
+      <ActionDialog
+        open={deleteSlotOpen}
+        kicker="DECK"
+        title="현재 슬롯을 삭제할까요?"
+        description={activeSlot ? `선택된 슬롯 "${activeSlot.name || '덱 슬롯'}"이 삭제됩니다.` : '현재 슬롯이 삭제됩니다.'}
+        confirmLabel="삭제"
+        onCancel={() => setDeleteSlotOpen(false)}
+        onConfirm={() => {
+          setDeleteSlotOpen(false)
+          void deleteSlot()
+        }}
+      />
     </main>
   )
 }

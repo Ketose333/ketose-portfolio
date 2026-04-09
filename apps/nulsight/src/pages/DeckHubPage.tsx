@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { postJson, readJson } from '../app/api/client'
+import { ActionDialog } from '../app/components/ActionDialog'
+import { readClipboardTextSafe, writeClipboardTextSafe } from '../client/ui/clipboard'
 import { GatedPageNotice } from '../app/components/GatedPageNotice'
 import { getDeckCodecGlobal, getSharedCardsGlobal, normalizeCardKey, type CardDef } from '../app/globals'
 import type { AuthResponse } from '../app/types'
@@ -137,6 +139,7 @@ export function DeckHubPage() {
   const [description, setDescription] = useState('')
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<DeckHubItem | null>(null)
 
   const hasMore = offset < total
 
@@ -233,16 +236,14 @@ export function DeckHubPage() {
         setStatus('덱 정보를 불러오지 못했습니다.')
         return
       }
-      localStorage.setItem('bp_import_deck_code', detail.post.code || '')
       await postJson<{ ok: boolean; error?: string }>('/api/deck-hub?action=import', { id })
-      navigate('/deck')
+      navigate('/deck', { state: { importDeckCode: detail.post.code || '' } })
     } finally {
       setBusy(null)
     }
   }
 
   async function deletePost(id: string) {
-    if (!window.confirm('이 덱을 허브에서 삭제할까요?')) return
     setBusy(`delete:${id}`)
     try {
       const response = await postJson<{ ok: boolean; error?: string }>('/api/deck-hub?action=delete', { id })
@@ -255,6 +256,16 @@ export function DeckHubPage() {
     } finally {
       setBusy(null)
     }
+  }
+
+  async function pasteDeckHubCode() {
+    const nextCode = await readClipboardTextSafe()
+    if (!nextCode.trim()) {
+      setStatus('클립보드에 덱 코드가 없습니다.')
+      return
+    }
+    setCode(nextCode.trim())
+    setStatus('업로드용 덱 코드를 붙여넣었습니다.')
   }
 
   const cards = useMemo(
@@ -290,6 +301,12 @@ export function DeckHubPage() {
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && busy === null) {
+                event.preventDefault()
+                void refresh(true)
+              }
+            }}
             autoComplete="off"
             placeholder="덱명/작성자/태그 검색"
           />
@@ -343,11 +360,10 @@ export function DeckHubPage() {
                 </ul>
               </div>
 
-              <div className="hub-effects">
-                <div className="hub-decklist__head">
-                  <span>효과 경향</span>
-                  <span className="muted">대략 요약</span>
-                </div>
+                <div className="hub-effects">
+                  <div className="hub-decklist__head">
+                    <span>효과 경향</span>
+                  </div>
                 <div className="hub-effects__chips">
                   {(item.summary?.effects || []).length ? (
                     item.summary?.effects.map(([name, count]) => (
@@ -369,7 +385,10 @@ export function DeckHubPage() {
               <button
                 className="ghost nulsight-button"
                 type="button"
-                onClick={() => void navigator.clipboard.writeText(item.code)}
+                onClick={async () => {
+                  const copied = await writeClipboardTextSafe(item.code)
+                  setStatus(copied ? '덱 코드를 복사했습니다.' : '덱 코드 복사에 실패했습니다.')
+                }}
               >
                 코드 복사
               </button>
@@ -377,7 +396,7 @@ export function DeckHubPage() {
                 내 덱으로 가져오기
               </button>
               {item.mine ? (
-                <button className="ghost nulsight-button" type="button" onClick={() => void deletePost(item.id)}>
+                <button className="ghost nulsight-button" type="button" onClick={() => setDeleteTarget(item)}>
                   삭제
                 </button>
               ) : null}
@@ -431,11 +450,31 @@ export function DeckHubPage() {
           placeholder="공유할 덱 코드를 붙여넣어 주세요"
         />
         <div className="hub-toolbar__row">
+          <button className="ghost nulsight-button" type="button" onClick={() => void pasteDeckHubCode()} disabled={busy !== null}>
+            코드 붙여넣기
+          </button>
           <button className="primary nulsight-button nulsight-button--primary" type="button" onClick={() => void publishDeckPost()} disabled={busy !== null}>
             허브에 올리기
           </button>
         </div>
       </section>
+
+      <ActionDialog
+        open={Boolean(deleteTarget)}
+        kicker="DECK HUB"
+        title="이 덱을 허브에서 삭제할까요?"
+        description={deleteTarget ? `"${deleteTarget.title}" 게시글이 허브에서 제거됩니다.` : ''}
+        confirmLabel="삭제"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (!deleteTarget) {
+            return
+          }
+          const nextId = deleteTarget.id
+          setDeleteTarget(null)
+          void deletePost(nextId)
+        }}
+      />
     </main>
   )
 }
