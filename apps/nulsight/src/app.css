@@ -1,0 +1,818 @@
+@import url('/core.css');
+@import url('/guide.css');
+@import url('/deck.css');
+@import url('/deck-hub.css');
+
+body {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.nulsight-app-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.nulsight-app-shell__content {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  padding-top: 18px;
+}
+
+.nulsight-app-shell__content--game {
+  min-height: 100dvh;
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+
+.nulsight-shell {
+  width: min(1180px, calc(100vw - 48px));
+  margin: 0 auto;
+  padding: 0 0 64px;
+}
+
+.nulsight-hero {
+  border: 1px solid var(--theme-shell-border);
+  background: linear-gradient(180deg, var(--theme-panel-strong), var(--theme-bg-elevated));
+  padding: 36px;
+}
+
+.nulsight-hero--compact {
+  max-width: 760px;
+}
+
+.nulsight-kicker {
+  margin: 0 0 10px;
+  color: var(--theme-subtle);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.nulsight-title {
+  margin: 0;
+  max-width: 10em;
+  font-family: var(--theme-font-display);
+  font-size: clamp(2.6rem, 5vw, 4.75rem);
+  line-height: 0.94;
+  letter-spacing: 0.02em;
+}
+
+.nulsight-copy {
+  max-width: 60ch;
+  margin: 20px 0 0;
+  color: var(--theme-muted);
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+.nulsight-copy--tight {
+  margin-top: 12px;
+}
+
+.nulsight-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.nulsight-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--theme-border-strong);
+  background: color-mix(in srgb, var(--theme-panel-strong) 92%, black 8%);
+  color: var(--theme-text);
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.nulsight-button--primary {
+  border-color: color-mix(in srgb, var(--theme-shell-border-strong) 75%, transparent);
+  background: color-mix(in srgb, var(--theme-text) 92%, #9fafd9 8%);
+  color: var(--theme-bg-elevated);
+}
+
+.nulsight-button:hover {
+  transform: translateY(-1px);
+  border-color: var(--theme-shell-border-strong);
+}
+
+.nulsight-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.nulsight-page-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.nulsight-page-main,
+.nulsight-page-side {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
+.nulsight-card {
+  border: 1px solid var(--theme-border);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-panel-strong) 88%, white 12%), var(--theme-bg-elevated));
+  padding: 20px;
+}
+
+.nulsight-card--stack {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.nulsight-card--wide {
+  grid-column: 1 / -1;
+}
+
+.nulsight-card h2 {
+  margin: 0 0 8px;
+  font-size: 1.125rem;
+}
+
+.nulsight-card p {
+  margin: 0 0 16px;
+  color: var(--theme-muted);
+}
+
+.nulsight-panel {
+  display: grid;
+  gap: 18px;
+  border: 1px solid var(--theme-shell-border);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-panel-strong) 94%, white 6%), color-mix(in srgb, var(--theme-panel) 92%, black 8%));
+  padding: 24px;
+  box-shadow: var(--theme-elevation-shadow);
+}
+
+.nulsight-panel--compact {
+  padding: 20px;
+}
+
+.nulsight-panel--hero {
+  gap: 24px;
+  padding: 28px;
+}
+
+.nulsight-panel__head {
+  margin-bottom: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.nulsight-panel__head > :last-child {
+  margin-bottom: 0;
+}
+
+.nulsight-panel > :last-child {
+  margin-bottom: 0;
+}
+
+.nulsight-section-title {
+  margin: 0;
+  font-size: clamp(1.3rem, 2vw, 1.9rem);
+  line-height: 1.08;
+  max-width: 18ch;
+  text-wrap: balance;
+}
+
+.nulsight-shell--narrow {
+  width: min(720px, calc(100vw - 40px));
+}
+
+.nulsight-shell--reading {
+  width: min(980px, calc(100vw - 48px));
+}
+
+.nulsight-shell--game {
+  width: min(1180px, calc(100vw - 40px));
+  min-height: 100dvh;
+  padding-top: 0;
+  padding-bottom: 18px;
+}
+
+body.nulsight-game-overlay-open {
+  overflow: hidden;
+}
+
+.nulsight-form,
+.nulsight-form-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.nulsight-lobby-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 14px;
+}
+
+.nulsight-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.nulsight-label {
+  display: grid;
+  gap: 8px;
+}
+
+.nulsight-label span,
+.nulsight-card h2 {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.nulsight-card h2,
+.nulsight-panel-label,
+.nulsight-band__label {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.nulsight-label input,
+.nulsight-inline-form input {
+  min-height: 44px;
+  padding: 0 14px;
+}
+
+.nulsight-shell input,
+.nulsight-shell textarea,
+.nulsight-shell select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--theme-border-strong);
+  border-radius: 0;
+  background: linear-gradient(180deg, var(--theme-bg-elevated), var(--theme-bg-elevated));
+  color: var(--theme-text);
+  box-shadow: none;
+  font: inherit;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background-color 120ms ease;
+}
+
+.nulsight-shell textarea {
+  min-height: 88px;
+  padding: 12px 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.nulsight-shell select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 42px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--theme-subtle) 50%),
+    linear-gradient(135deg, var(--theme-subtle) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 2px),
+    calc(100% - 12px) calc(50% - 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+.nulsight-shell select option {
+  background: var(--theme-panel-strong);
+  color: var(--theme-text);
+}
+
+.nulsight-shell input::placeholder,
+.nulsight-shell textarea::placeholder {
+  color: var(--theme-muted);
+  opacity: var(--theme-alpha-strong);
+}
+
+.nulsight-shell input:focus-visible,
+.nulsight-shell textarea:focus-visible,
+.nulsight-shell select:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-color: var(--theme-shell-border-strong);
+}
+
+.nulsight-shell input[readonly],
+.nulsight-shell textarea[readonly] {
+  opacity: var(--theme-alpha-strong);
+  cursor: default;
+}
+
+.nulsight-shell input:disabled,
+.nulsight-shell textarea:disabled,
+.nulsight-shell select:disabled {
+  opacity: var(--theme-alpha-disabled);
+  cursor: not-allowed;
+}
+
+.nulsight-button:disabled,
+.ui-shell-chrome__button:disabled,
+.game-toolbar button:disabled,
+.attack-agent:disabled {
+  opacity: var(--theme-alpha-disabled);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.nulsight-inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.nulsight-inline-form input {
+  flex: 1 1 220px;
+}
+
+.nulsight-note-stack {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.nulsight-note-stack--panel {
+  margin-top: 0;
+  padding: 16px;
+  border: 1px solid var(--theme-border);
+  background: color-mix(in srgb, var(--theme-bg-elevated) 92%, black 8%);
+}
+
+.nulsight-note-stack--tight {
+  margin-top: 12px;
+}
+
+.nulsight-status,
+.nulsight-note {
+  margin: 0;
+  color: var(--theme-muted);
+  line-height: 1.6;
+  word-break: keep-all;
+  text-wrap: pretty;
+}
+
+.nulsight-status--strong {
+  color: var(--theme-text);
+  font-size: 1rem;
+}
+
+.nulsight-inline-link {
+  color: var(--theme-text);
+}
+
+.nulsight-actions--compact {
+  margin-top: 16px;
+}
+
+.nulsight-actions--form {
+  margin-top: 4px;
+}
+
+.nulsight-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--theme-overlay);
+}
+
+.nulsight-dialog-backdrop.hidden {
+  display: none;
+}
+
+.nulsight-dialog-backdrop--system {
+  z-index: 10140;
+}
+
+.nulsight-dialog {
+  width: min(520px, calc(100vw - 32px));
+  display: grid;
+  gap: 16px;
+  border: 1px solid var(--theme-shell-border);
+  background: linear-gradient(180deg, var(--theme-panel-strong), var(--theme-panel));
+  padding: 24px;
+  box-shadow: var(--theme-elevation-shadow);
+}
+
+.nulsight-dialog--system {
+  width: min(560px, calc(100vw - 32px));
+}
+
+.nulsight-loading-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10120;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--theme-overlay-strong);
+}
+
+.nulsight-loading-backdrop.hidden {
+  display: none;
+}
+
+.nulsight-loading-panel {
+  min-width: min(320px, calc(100vw - 48px));
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid var(--theme-shell-border);
+  background: linear-gradient(180deg, var(--theme-panel-strong), var(--theme-panel));
+  box-shadow: var(--theme-elevation-shadow);
+}
+
+.nulsight-loading-panel__text {
+  color: var(--theme-text-strong);
+  font-size: var(--fs-min-readable);
+  text-align: center;
+}
+
+.nulsight-code-box {
+  margin: 0;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--theme-border);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-elevated) 88%, white 12%), var(--theme-bg));
+  font-family: var(--theme-font-display);
+  font-size: clamp(1.7rem, 3.4vw, 2.6rem);
+  letter-spacing: 0.16em;
+}
+
+.nulsight-room-code {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--theme-border);
+  background: color-mix(in srgb, var(--theme-bg-elevated) 92%, black 8%);
+}
+
+.nulsight-room-code__label {
+  color: var(--theme-muted);
+  font-size: 0.9rem;
+}
+
+.nulsight-room-code__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.nulsight-room-code__copy {
+  min-width: 112px;
+  align-self: stretch;
+}
+
+.nulsight-kv-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.nulsight-kv-list div,
+.nulsight-mini-card {
+  padding: 14px;
+  border: 1px solid var(--theme-border);
+  background: color-mix(in srgb, var(--theme-bg-elevated) 92%, black 8%);
+}
+
+.nulsight-kv-list div {
+  display: grid;
+  gap: 4px;
+}
+
+.nulsight-kv-list dt,
+.nulsight-mini-card h3 {
+  margin: 0 0 6px;
+  color: var(--theme-muted);
+  font-size: 0.9rem;
+}
+
+.nulsight-kv-list dd,
+.nulsight-mini-card p {
+  margin: 0;
+}
+
+.nulsight-kv-list dd {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.nulsight-mini-card {
+  display: grid;
+  gap: 4px;
+  min-height: 88px;
+  align-content: start;
+}
+
+.nulsight-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.nulsight-step-list {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.nulsight-step-list li {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--theme-border);
+  background: color-mix(in srgb, var(--theme-bg-elevated) 92%, black 8%);
+}
+
+.nulsight-step-list span {
+  color: var(--theme-muted);
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.nulsight-band-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.nulsight-band-list--guide {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.nulsight-band {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--theme-border);
+  background: color-mix(in srgb, var(--theme-bg-elevated) 90%, black 10%);
+}
+
+.nulsight-band__label {
+  color: var(--theme-subtle);
+  font-size: 0.72rem;
+}
+
+.nulsight-band__value {
+  color: var(--theme-text);
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.nulsight-panel-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) auto;
+  gap: 16px;
+  align-items: end;
+}
+
+.nulsight-ops-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+}
+
+.nulsight-panel-label {
+  margin: 0 0 2px;
+  color: var(--theme-subtle);
+  font-size: 0.72rem;
+}
+
+.nulsight-agent-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nulsight-agent-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--theme-border);
+  background: color-mix(in srgb, var(--theme-panel-strong) 90%, black 10%);
+  color: var(--theme-text);
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.nulsight-agent-chip--empty {
+  color: var(--theme-subtle);
+}
+
+.nulsight-auth-panel {
+  gap: 16px;
+  margin: auto 0;
+}
+
+.nulsight-auth-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.nulsight-auth-form {
+  min-width: 0;
+}
+
+.nulsight-flow-block {
+  display: grid;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.nulsight-step-list--compact li {
+  gap: 2px;
+  padding: 10px 12px;
+}
+
+.nulsight-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.nulsight-shell--reading .nulsight-panel--hero .nulsight-section-title {
+  max-width: 11ch;
+}
+
+.nulsight-shell--lobby .nulsight-page-grid {
+  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+  gap: 18px;
+}
+
+.nulsight-chrome {
+  overflow: clip;
+}
+
+.nulsight-chrome__header {
+  align-items: end;
+}
+
+.nulsight-chrome .ui-shell-chrome__header-grid {
+  padding: 10px 0;
+  gap: 12px;
+}
+
+.nulsight-chrome .ui-shell-chrome__nav-link,
+.nulsight-chrome .ui-shell-chrome__button {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.nulsight-chrome__brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+}
+
+.nulsight-chrome__wordmark {
+  font-size: 1rem;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.nulsight-chrome__user {
+  color: var(--theme-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.nulsight-chrome__footer-grid {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.nulsight-shell--game .nulsight-panel {
+  border-color: var(--theme-shell-border);
+  background: linear-gradient(180deg, var(--theme-panel-strong), var(--theme-panel));
+}
+
+.nulsight-shell--game .nulsight-panel--compact {
+  padding: 18px;
+}
+
+.nulsight-card,
+.hub-card {
+  border-color: var(--theme-shell-border);
+  background: var(--theme-panel);
+  box-shadow: none;
+}
+
+.deck-toolbar,
+.deck-share,
+.deck-panel,
+.hub-toolbar,
+.hub-card {
+  box-shadow: none;
+}
+
+.hub-toolbar__head .nulsight-copy {
+  margin: 0;
+  color: var(--theme-muted);
+  max-width: 60ch;
+}
+
+.deck-toolbar__signals,
+.hub-toolbar__signals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.deck-card,
+.nulsight-mini-card,
+.nulsight-kv-list div,
+.nulsight-step-list li {
+  border-color: var(--theme-border);
+  background: color-mix(in srgb, var(--theme-bg-elevated) 92%, black 8%);
+}
+
+.nulsight-mini-card p {
+  text-wrap: pretty;
+}
+
+@media (max-width: 980px) {
+  .nulsight-page-grid,
+  .nulsight-lobby-grid,
+  .nulsight-form-grid,
+  .nulsight-mini-grid,
+  .nulsight-auth-layout,
+  .nulsight-guide-grid,
+  .nulsight-band-list,
+  .nulsight-band-list--guide,
+  .deck-toolbar__signals,
+  .hub-toolbar__signals,
+  .nulsight-panel-split {
+    grid-template-columns: 1fr;
+  }
+
+  .nulsight-ops-footer {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .nulsight-room-code__row {
+    grid-template-columns: 1fr;
+  }
+
+  .nulsight-shell,
+  .nulsight-shell--narrow {
+    width: min(100vw - 28px, 1180px);
+    padding-top: 0;
+    padding-bottom: 36px;
+  }
+
+  .nulsight-dialog {
+    padding: 20px;
+  }
+
+  .nulsight-chrome__header {
+    align-items: start;
+  }
+}

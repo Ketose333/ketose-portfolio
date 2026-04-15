@@ -1,0 +1,29 @@
+{
+  "number": 5,
+  "variant": {
+    "bannerColor": "0xe6e6e6",
+    "paletteId": "shrine",
+    "arena": {
+      "kind": "boss",
+      "rankProfileId": "shared-boss",
+      "routes": {
+        "route-a": {
+          "bossName": "경계 수호체",
+          "clearMessage": "5면 보스를 돌파했다",
+          "bannerColor": "0xd5d5d5",
+          "bossFill": "0x161616",
+          "bossAccent": "0xffffff",
+          "patternId": "guardian-fan"
+        },
+        "route-b": {
+          "bossName": "경계 수호체",
+          "clearMessage": "5면 보스를 돌파했다",
+          "bannerColor": "0xd5d5d5",
+          "bossFill": "0x161616",
+          "bossAccent": "0xffffff",
+          "patternId": "guardian-fan"
+        }
+      }
+    }
+  }
+}

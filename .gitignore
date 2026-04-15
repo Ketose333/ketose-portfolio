@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-check
+.DS_Store
+.turbo
+.vercel
+coverage
+*.log
+*.tsbuildinfo
+.agents/
+.junie/

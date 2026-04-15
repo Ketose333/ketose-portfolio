@@ -1,0 +1,57 @@
+{
+  "number": 10,
+  "variants": {
+    "route-a": {
+      "bannerColor": "0xffffff",
+      "paletteId": "routeA",
+      "arena": {
+        "kind": "boss",
+        "rankProfileId": "shared-boss",
+        "routes": {
+          "route-a": {
+            "bossName": "기둥 동조자",
+            "clearMessage": "{{route.branchLabel}} 중간 경계를 돌파했다",
+            "bannerColor": "0xf0f0f0",
+            "bossFill": "0x141414",
+            "bossAccent": "0xffffff",
+            "patternId": "route-a-branch"
+          },
+          "route-b": {
+            "bossName": "현실 수복자",
+            "clearMessage": "{{route.branchLabel}} 중간 경계를 돌파했다",
+            "bannerColor": "0xbdbdbd",
+            "bossFill": "0x0f0f0f",
+            "bossAccent": "0xf4f4f4",
+            "patternId": "route-b-branch"
+          }
+        }
+      }
+    },
+    "route-b": {
+      "bannerColor": "0xa8a8a8",
+      "paletteId": "routeB",
+      "arena": {
+        "kind": "boss",
+        "rankProfileId": "shared-boss",
+        "routes": {
+          "route-a": {
+            "bossName": "기둥 동조자",
+            "clearMessage": "{{route.branchLabel}} 중간 경계를 돌파했다",
+            "bannerColor": "0xf0f0f0",
+            "bossFill": "0x141414",
+            "bossAccent": "0xffffff",
+            "patternId": "route-a-branch"
+          },
+          "route-b": {
+            "bossName": "현실 수복자",
+            "clearMessage": "{{route.branchLabel}} 중간 경계를 돌파했다",
+            "bannerColor": "0xbdbdbd",
+            "bossFill": "0x0f0f0f",
+            "bossAccent": "0xf4f4f4",
+            "patternId": "route-b-branch"
+          }
+        }
+      }
+    }
+  }
+}

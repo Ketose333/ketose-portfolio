@@ -1,0 +1,57 @@
+{
+  "number": 20,
+  "variants": {
+    "route-a": {
+      "bannerColor": "0xffffff",
+      "paletteId": "routeALate",
+      "arena": {
+        "kind": "boss",
+        "rankProfileId": "final-boss",
+        "routes": {
+          "route-a": {
+            "bossName": "종결핵",
+            "clearMessage": "{{route.branchLabel}} 최종 국면을 마쳤다",
+            "bannerColor": "0xf6f6f6",
+            "bossFill": "0x101010",
+            "bossAccent": "0xffffff",
+            "patternId": "route-a-final"
+          },
+          "route-b": {
+            "bossName": "개시자",
+            "clearMessage": "{{route.branchLabel}} 최종 국면을 마쳤다",
+            "bannerColor": "0xc8c8c8",
+            "bossFill": "0x0d0d0d",
+            "bossAccent": "0xf0f0f0",
+            "patternId": "route-b-final"
+          }
+        }
+      }
+    },
+    "route-b": {
+      "bannerColor": "0xd0d0d0",
+      "paletteId": "routeBLate",
+      "arena": {
+        "kind": "boss",
+        "rankProfileId": "final-boss",
+        "routes": {
+          "route-a": {
+            "bossName": "종결핵",
+            "clearMessage": "{{route.branchLabel}} 최종 국면을 마쳤다",
+            "bannerColor": "0xf6f6f6",
+            "bossFill": "0x101010",
+            "bossAccent": "0xffffff",
+            "patternId": "route-a-final"
+          },
+          "route-b": {
+            "bossName": "개시자",
+            "clearMessage": "{{route.branchLabel}} 최종 국면을 마쳤다",
+            "bannerColor": "0xc8c8c8",
+            "bossFill": "0x0d0d0d",
+            "bossAccent": "0xf0f0f0",
+            "patternId": "route-b-final"
+          }
+        }
+      }
+    }
+  }
+}

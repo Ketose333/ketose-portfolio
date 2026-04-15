@@ -1,0 +1,84 @@
+/* AUTO-GENERATED from theme.oklch.css by scripts/build-theme-css.mjs */
+/* Single source of truth: themes/theme.oklch.css */
+
+:root {
+  color-scheme: dark;
+  --theme-font-sans: "Pretendard", "Noto Sans KR", "Segoe UI", "Malgun Gothic", sans-serif;
+  --theme-font-display: "Oxanium", var(--theme-font-sans);
+  --theme-bg: rgb(1 1 2);
+  --theme-bg-elevated: rgb(4 6 9);
+  --theme-panel: rgb(255 255 255 / 0.03);
+  --theme-panel-strong: rgb(7 9 14);
+  --theme-text: rgb(245 245 245);
+  --theme-muted: rgb(245 245 245 / 0.78);
+  --theme-muted-strong: rgb(245 245 245 / 0.62);
+  --theme-subtle: rgb(245 245 245 / 0.58);
+  --theme-border: rgb(255 255 255 / 0.1);
+  --theme-border-strong: rgb(255 255 255 / 0.16);
+  --theme-shell-border: rgb(255 255 255 / 0.24);
+  --theme-shell-border-strong: rgb(255 255 255 / 0.4);
+  --theme-surface: rgb(1 1 2);
+  --theme-surface-strong: rgb(4 6 9);
+  --theme-surface-contrast: rgb(7 9 14);
+  --theme-alpha-strong: 0.92;
+  --theme-alpha-muted: 0.7;
+  --theme-alpha-disabled: 0.62;
+  --theme-alpha-whisper: 0.22;
+  --theme-overlay: rgb(0 0 0 / 0.82);
+  --theme-overlay-strong: rgb(0 0 0 / 0.92);
+  --theme-wash-top: rgb(255 255 255 / 0.03);
+  --theme-wash-accent: rgb(138 149 202 / 0.08);
+  --theme-shell-fill: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-panel-strong) 94%, black 6%),
+    color-mix(in srgb, var(--theme-panel) 92%, black 8%)
+  );
+  --theme-panel-fill-raised: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-panel-strong) 92%, white 8%),
+    var(--theme-bg-elevated)
+  );
+  --theme-panel-fill-flat: color-mix(in srgb, var(--theme-panel) 92%, black 8%);
+  --theme-elevation-shadow: 0 18px 60px color-mix(in oklab, var(--theme-bg) 70%, transparent);
+  --theme-overlay-shadow: 0 28px 80px color-mix(in srgb, black 52%, transparent);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: var(--theme-font-sans);
+  background: var(--theme-bg);
+  color: var(--theme-text);
+}
+
+a,
+button,
+input,
+textarea,
+select {
+  color: inherit;
+  font: inherit;
+}
+
+a {
+  text-decoration: none;
+}

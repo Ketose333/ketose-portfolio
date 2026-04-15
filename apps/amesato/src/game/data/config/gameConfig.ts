@@ -1,0 +1,39 @@
+export const GAME_WIDTH = 640
+export const GAME_HEIGHT = 400
+export const FIXED_TIMESTEP_MS = 1000 / 60
+
+export const PLAYFIELD_LEFT = 0
+export const PLAYFIELD_TOP = 32
+export const PLAYFIELD_RIGHT = GAME_WIDTH
+export const PLAYFIELD_BOTTOM = GAME_HEIGHT - 32
+export const PLAYFIELD_WIDTH = PLAYFIELD_RIGHT - PLAYFIELD_LEFT
+export const PLAYFIELD_HEIGHT = PLAYFIELD_BOTTOM - PLAYFIELD_TOP
+export const PLAYFIELD_CENTER_X = PLAYFIELD_LEFT + PLAYFIELD_WIDTH / 2
+
+export const PLAYER_WIDTH = 32
+export const PLAYER_HEIGHT = 32
+export const PLAYER_RADIUS = 16
+export const PLAYER_HITBOX_RADIUS = 8
+export const PLAYER_SPEED = 320
+export const PLAYER_FOCUS_SPEED = 240
+export const PLAYER_SHOT_INTERVAL = 0.12
+export const PLAYER_INVULNERABILITY_SECONDS = 1.2
+export const PLAYER_RENDER_SNAP = 4
+
+export const ORB_RADIUS = 16
+export const ORB_GRAVITY = 560
+export const ORB_MAX_SPEED = 360
+export const ORB_SHOT_IMPULSE_Y = -132
+export const ORB_SHOT_IMPULSE_X = 54
+export const ORB_PADDLE_BOUNCE_SPEED = 300
+export const ORB_BOUNCE_RESTITUTION = 0.78
+export const ORB_START_OFFSET_RIGHT = 8
+export const ORB_START_OFFSET_BOTTOM = 88
+
+export const ENEMY_RADIUS = 28
+export const ENEMY_MAX_HEALTH = 28
+export const ENEMY_SHOT_INTERVAL = 1.2
+export const ENEMY_RESPAWN_DELAY = 1.6
+export const ENEMY_BULLET_SPEED = 170
+
+export const BACKGROUND_SCROLL_SPEED = 20

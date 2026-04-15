@@ -1,0 +1,28 @@
+.play-shell {
+  border: 1px solid var(--c-play-shell-border);
+  background: var(--c-play-shell-bg);
+  width: 100%;
+}
+
+.play-shell--game {
+  min-height: min(720px, calc(100dvh - 40px));
+  display: flex;
+  align-items: center;
+}
+
+.play-layout {
+  width: 100%;
+  align-items: center;
+}
+
+.play-layout > * {
+  min-width: 0;
+}
+
+.play-side-column {
+  justify-content: center;
+}
+
+.mobile-blocked-grid > * {
+  min-width: 0;
+}

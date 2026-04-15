@@ -1,0 +1,111 @@
+{
+  "number": 2,
+  "variant": {
+    "bannerColor": "0xe6e6e6",
+    "paletteId": "archive",
+    "arena": {
+      "kind": "basic",
+      "clearMessage": "2면 서고의 봉인이 풀렸다",
+      "cards": [
+        {
+          "id": "s2-a",
+          "x": 96,
+          "y": 80,
+          "flips": 1,
+          "scoreBase": 110
+        },
+        {
+          "id": "s2-b",
+          "x": 176,
+          "y": 128,
+          "flips": 1,
+          "scoreBase": 125
+        },
+        {
+          "id": "s2-c",
+          "x": 256,
+          "y": 80,
+          "flips": 1,
+          "scoreBase": 150
+        },
+        {
+          "id": "s2-d",
+          "x": 352,
+          "y": 80,
+          "flips": 1,
+          "scoreBase": 150
+        },
+        {
+          "id": "s2-e",
+          "x": 432,
+          "y": 128,
+          "flips": 1,
+          "scoreBase": 125
+        },
+        {
+          "id": "s2-f",
+          "x": 512,
+          "y": 80,
+          "flips": 1,
+          "scoreBase": 110
+        }
+      ],
+      "obstacles": [
+        {
+          "id": "s2-top-left",
+          "type": "bar_bottom",
+          "x": 152,
+          "y": 152,
+          "width": 96,
+          "height": 12,
+          "collisionCooldownFrames": 8
+        },
+        {
+          "id": "s2-top-right",
+          "type": "bar_bottom",
+          "x": 392,
+          "y": 152,
+          "width": 96,
+          "height": 12,
+          "collisionCooldownFrames": 8
+        },
+        {
+          "id": "s2-bottom-left",
+          "type": "bar_top",
+          "x": 152,
+          "y": 248,
+          "width": 96,
+          "height": 12,
+          "collisionCooldownFrames": 8
+        },
+        {
+          "id": "s2-bottom-right",
+          "type": "bar_top",
+          "x": 392,
+          "y": 248,
+          "width": 96,
+          "height": 12,
+          "collisionCooldownFrames": 8
+        },
+        {
+          "id": "s2-left-bumper",
+          "type": "bumper",
+          "x": 208,
+          "y": 208,
+          "width": 32,
+          "height": 32,
+          "collisionCooldownFrames": 8
+        },
+        {
+          "id": "s2-right-bumper",
+          "type": "bumper",
+          "x": 400,
+          "y": 208,
+          "width": 32,
+          "height": 32,
+          "collisionCooldownFrames": 8
+        }
+      ]
+    }
+  }
+}

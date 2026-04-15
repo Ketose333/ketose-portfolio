@@ -1,0 +1,137 @@
+{
+  "number": 4,
+  "variant": {
+    "bannerColor": "0xcfcfcf",
+    "paletteId": "archive",
+    "arena": {
+      "kind": "basic",
+      "clearMessage": "4면 제단이 무너졌다",
+      "cards": [
+        {
+          "id": "s4-a",
+          "x": 96,
+          "y": 80,
+          "flips": 1,
+          "scoreBase": 130
+        },
+        {
+          "id": "s4-b",
+          "x": 176,
+          "y": 136,
+          "flips": 1,
+          "scoreBase": 145
+        },
+        {
+          "id": "s4-c",
+          "x": 256,
+          "y": 88,
+          "flips": 2,
+          "scoreBase": 165
+        },
+        {
+          "id": "s4-d",
+          "x": 352,
+          "y": 88,
+          "flips": 2,
+          "scoreBase": 165
+        },
+        {
+          "id": "s4-e",
+          "x": 432,
+          "y": 136,
+          "flips": 1,
+          "scoreBase": 145
+        },
+        {
+          "id": "s4-f",
+          "x": 512,
+          "y": 80,
+          "flips": 1,
+          "scoreBase": 130
+        }
+      ],
+      "obstacles": [
+        {
+          "id": "s4-top-left",
+          "type": "bar_bottom",
+          "x": 112,
+          "y": 168,
+          "width": 112,
+          "height": 12,
+          "collisionCooldownFrames": 8
+        },
+        {
+          "id": "s4-top-right",
+          "type": "bar_bottom",
+          "x": 416,
+          "y": 168,
+          "width": 112,
+          "height": 12,
+          "collisionCooldownFrames": 8
+        },
+        {
+          "id": "s4-center-left",
+          "type": "bar_right",
+          "x": 224,
+          "y": 192,
+          "width": 12,
+          "height": 112,
+          "collisionCooldownFrames": 8
+        },
+        {
+          "id": "s4-center-right",
+          "type": "bar_left",
+          "x": 404,
+          "y": 192,
+          "width": 12,
+          "height": 112,
+          "collisionCooldownFrames": 8
+        },
+        {
+          "id": "s4-turret-left",
+          "type": "turret_slow",
+          "x": 80,
+          "y": 248,
+          "width": 32,
+          "height": 32,
+          "minRank": "lunatic",
+          "fireIntervalFrames": 220,
+          "turretPattern": "aimed"
+        },
+        {
+          "id": "s4-turret-right",
+          "type": "turret_slow",
+          "x": 528,
+          "y": 248,
+          "width": 32,
+          "height": 32,
+          "minRank": "lunatic",
+          "fireIntervalFrames": 220,
+          "turretPattern": "aimed"
+        },
+        {
+          "id": "s4-gate-left",
+          "type": "portal",
+          "x": 144,
+          "y": 288,
+          "width": 32,
+          "height": 32,
+          "minRank": "lunatic",
+          "collisionCooldownFrames": 8,
+          "linkId": "s4-gate"
+        },
+        {
+          "id": "s4-gate-right",
+          "type": "portal",
+          "x": 464,
+          "y": 288,
+          "width": 32,
+          "height": 32,
+          "minRank": "lunatic",
+          "collisionCooldownFrames": 8,
+          "linkId": "s4-gate"
+        }
+      ]
+    }
+  }
+}

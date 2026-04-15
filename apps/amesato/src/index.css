@@ -1,0 +1,4 @@
+@import "tailwindcss";
+@import "../../../themes/theme.css";
+@import "./styles/palette.css";
+@import "./styles/styles.css";

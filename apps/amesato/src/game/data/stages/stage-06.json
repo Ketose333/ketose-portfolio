@@ -1,0 +1,234 @@
+{
+  "number": 6,
+  "variants": {
+    "route-a": {
+      "bannerColor": "0xf0f0f0",
+      "paletteId": "routeA",
+      "arena": {
+        "kind": "basic",
+        "clearMessage": "6면 {{route.label}} 입구를 돌파했다",
+        "cards": [
+          {
+            "id": "m6-a",
+            "x": 96,
+            "y": 72,
+            "flips": 1,
+            "scoreBase": 120
+          },
+          {
+            "id": "m6-b",
+            "x": 176,
+            "y": 120,
+            "flips": 1,
+            "scoreBase": 145
+          },
+          {
+            "id": "m6-c",
+            "x": 256,
+            "y": 72,
+            "flips": 2,
+            "scoreBase": 165
+          },
+          {
+            "id": "m6-d",
+            "x": 352,
+            "y": 72,
+            "flips": 2,
+            "scoreBase": 165
+          },
+          {
+            "id": "m6-e",
+            "x": 432,
+            "y": 120,
+            "flips": 1,
+            "scoreBase": 145
+          },
+          {
+            "id": "m6-f",
+            "x": 512,
+            "y": 72,
+            "flips": 1,
+            "scoreBase": 120
+          }
+        ],
+        "obstacles": [
+          {
+            "id": "m6-top-bar",
+            "type": "bar_bottom",
+            "x": 176,
+            "y": 152,
+            "width": 288,
+            "height": 12,
+            "collisionCooldownFrames": 8
+          },
+          {
+            "id": "m6-left-wall",
+            "type": "bar_right",
+            "x": 160,
+            "y": 200,
+            "width": 12,
+            "height": 112,
+            "collisionCooldownFrames": 8
+          },
+          {
+            "id": "m6-right-wall",
+            "type": "bar_left",
+            "x": 468,
+            "y": 200,
+            "width": 12,
+            "height": 112,
+            "collisionCooldownFrames": 8
+          },
+          {
+            "id": "m6-left-bumper",
+            "type": "bumper",
+            "x": 240,
+            "y": 224,
+            "width": 32,
+            "height": 32,
+            "collisionCooldownFrames": 8
+          },
+          {
+            "id": "m6-right-bumper",
+            "type": "bumper",
+            "x": 368,
+            "y": 224,
+            "width": 32,
+            "height": 32,
+            "collisionCooldownFrames": 8
+          },
+          {
+            "id": "m6-gate-left",
+            "type": "portal",
+            "x": 96,
+            "y": 288,
+            "width": 32,
+            "height": 32,
+            "minRank": "lunatic",
+            "collisionCooldownFrames": 8,
+            "linkId": "m6-gate"
+          },
+          {
+            "id": "m6-gate-right",
+            "type": "portal",
+            "x": 512,
+            "y": 288,
+            "width": 32,
+            "height": 32,
+            "minRank": "lunatic",
+            "collisionCooldownFrames": 8,
+            "linkId": "m6-gate"
+          }
+        ]
+      }
+    },
+    "route-b": {
+      "bannerColor": "0xc8c8c8",
+      "paletteId": "routeB",
+      "arena": {
+        "kind": "basic",
+        "clearMessage": "6면 {{route.label}} 입구를 돌파했다",
+        "cards": [
+          {
+            "id": "j6-a",
+            "x": 96,
+            "y": 96,
+            "flips": 1,
+            "scoreBase": 120
+          },
+          {
+            "id": "j6-b",
+            "x": 176,
+            "y": 72,
+            "flips": 1,
+            "scoreBase": 145
+          },
+          {
+            "id": "j6-c",
+            "x": 256,
+            "y": 120,
+            "flips": 2,
+            "scoreBase": 165
+          },
+          {
+            "id": "j6-d",
+            "x": 352,
+            "y": 120,
+            "flips": 2,
+            "scoreBase": 165
+          },
+          {
+            "id": "j6-e",
+            "x": 432,
+            "y": 72,
+            "flips": 1,
+            "scoreBase": 145
+          },
+          {
+            "id": "j6-f",
+            "x": 512,
+            "y": 96,
+            "flips": 1,
+            "scoreBase": 120
+          }
+        ],
+        "obstacles": [
+          {
+            "id": "j6-floor-left",
+            "type": "bar_top",
+            "x": 112,
+            "y": 264,
+            "width": 144,
+            "height": 12,
+            "collisionCooldownFrames": 8
+          },
+          {
+            "id": "j6-floor-right",
+            "type": "bar_top",
+            "x": 384,
+            "y": 264,
+            "width": 144,
+            "height": 12,
+            "collisionCooldownFrames": 8
+          },
+          {
+            "id": "j6-pillar-left",
+            "type": "bar_right",
+            "x": 208,
+            "y": 184,
+            "width": 12,
+            "height": 112,
+            "collisionCooldownFrames": 8
+          },
+          {
+            "id": "j6-pillar-right",
+            "type": "bar_left",
+            "x": 420,
+            "y": 184,
+            "width": 12,
+            "height": 112,
+            "collisionCooldownFrames": 8
+          },
+          {
+            "id": "j6-left-bumper",
+            "type": "bumper",
+            "x": 160,
+            "y": 208,
+            "width": 32,
+            "height": 32,
+            "collisionCooldownFrames": 8
+          },
+          {
+            "id": "j6-right-bumper",
+            "type": "bumper",
+            "x": 448,
+            "y": 208,
+            "width": 32,
+            "height": 32,
+            "collisionCooldownFrames": 8
+          }
+        ]
+      }
+    }
+  }
+}

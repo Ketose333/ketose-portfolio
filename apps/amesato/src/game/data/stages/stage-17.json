@@ -1,0 +1,62 @@
+{
+  "number": 17,
+  "variants": {
+    "route-a": {
+      "bannerColor": "0xf4f4f4",
+      "paletteId": "routeALate",
+      "arena": {
+        "kind": "basic",
+        "clearMessage": "17면 {{route.label}} 중층을 돌파했다",
+        "cards": [
+          { "id": "m17-a", "x": 80, "y": 72, "flips": 1, "scoreBase": 170 },
+          { "id": "m17-b", "x": 176, "y": 128, "flips": 2, "scoreBase": 210 },
+          { "id": "m17-c", "x": 272, "y": 72, "flips": 2, "scoreBase": 230 },
+          { "id": "m17-d", "x": 336, "y": 72, "flips": 2, "scoreBase": 230 },
+          { "id": "m17-e", "x": 432, "y": 128, "flips": 2, "scoreBase": 210 },
+          { "id": "m17-f", "x": 528, "y": 72, "flips": 1, "scoreBase": 170 }
+        ],
+        "obstacles": [
+          { "id": "m17-ceiling-left", "type": "bar_bottom", "x": 128, "y": 152, "width": 96, "height": 12, "collisionCooldownFrames": 8 },
+          { "id": "m17-ceiling-right", "type": "bar_bottom", "x": 416, "y": 152, "width": 96, "height": 12, "collisionCooldownFrames": 8 },
+          { "id": "m17-wall-left", "type": "bar_right", "x": 224, "y": 184, "width": 12, "height": 144, "collisionCooldownFrames": 8 },
+          { "id": "m17-wall-right", "type": "bar_left", "x": 404, "y": 184, "width": 12, "height": 144, "collisionCooldownFrames": 8 },
+          { "id": "m17-bumper-left", "type": "bumper", "x": 256, "y": 232, "width": 32, "height": 32, "collisionCooldownFrames": 8 },
+          { "id": "m17-bumper-right", "type": "bumper", "x": 352, "y": 232, "width": 32, "height": 32, "collisionCooldownFrames": 8 },
+          { "id": "m17-portal-left", "type": "portal", "x": 160, "y": 272, "width": 32, "height": 32, "minRank": "hard", "collisionCooldownFrames": 8, "linkId": "m17-gate" },
+          { "id": "m17-portal-right", "type": "portal", "x": 448, "y": 272, "width": 32, "height": 32, "minRank": "hard", "collisionCooldownFrames": 8, "linkId": "m17-gate" },
+          { "id": "m17-turret-left", "type": "turret_quick", "x": 64, "y": 296, "width": 32, "height": 32, "minRank": "lunatic", "fireIntervalFrames": 205, "turretPattern": "aimed" },
+          { "id": "m17-turret-right", "type": "turret_quick", "x": 544, "y": 296, "width": 32, "height": 32, "minRank": "lunatic", "fireIntervalFrames": 205, "turretPattern": "aimed" }
+        ]
+      }
+    },
+    "route-b": {
+      "bannerColor": "0xcfcfcf",
+      "paletteId": "routeBLate",
+      "arena": {
+        "kind": "basic",
+        "clearMessage": "17면 {{route.label}} 갈림층을 돌파했다",
+        "cards": [
+          { "id": "j17-a", "x": 64, "y": 88, "flips": 1, "scoreBase": 170 },
+          { "id": "j17-b", "x": 160, "y": 144, "flips": 2, "scoreBase": 210 },
+          { "id": "j17-c", "x": 256, "y": 88, "flips": 2, "scoreBase": 232 },
+          { "id": "j17-d", "x": 304, "y": 152, "flips": 3, "scoreBase": 252 },
+          { "id": "j17-e", "x": 352, "y": 88, "flips": 2, "scoreBase": 232 },
+          { "id": "j17-f", "x": 448, "y": 144, "flips": 2, "scoreBase": 210 },
+          { "id": "j17-g", "x": 544, "y": 88, "flips": 1, "scoreBase": 170 }
+        ],
+        "obstacles": [
+          { "id": "j17-top-left", "type": "bar_bottom", "x": 96, "y": 160, "width": 96, "height": 12, "collisionCooldownFrames": 8 },
+          { "id": "j17-top-right", "type": "bar_bottom", "x": 448, "y": 160, "width": 96, "height": 12, "collisionCooldownFrames": 8 },
+          { "id": "j17-bottom-left", "type": "bar_top", "x": 96, "y": 320, "width": 96, "height": 12, "collisionCooldownFrames": 8 },
+          { "id": "j17-bottom-right", "type": "bar_top", "x": 448, "y": 320, "width": 96, "height": 12, "collisionCooldownFrames": 8 },
+          { "id": "j17-mid-left", "type": "bar_right", "x": 256, "y": 176, "width": 12, "height": 128, "collisionCooldownFrames": 8 },
+          { "id": "j17-mid-right", "type": "bar_left", "x": 372, "y": 176, "width": 12, "height": 128, "collisionCooldownFrames": 8 },
+          { "id": "j17-bumper-left", "type": "bumper", "x": 192, "y": 232, "width": 32, "height": 32, "collisionCooldownFrames": 8 },
+          { "id": "j17-bumper-right", "type": "bumper", "x": 416, "y": 232, "width": 32, "height": 32, "collisionCooldownFrames": 8 },
+          { "id": "j17-portal-left", "type": "portal", "x": 256, "y": 280, "width": 32, "height": 32, "minRank": "hard", "collisionCooldownFrames": 8, "linkId": "j17-gate" },
+          { "id": "j17-portal-right", "type": "portal", "x": 352, "y": 280, "width": 32, "height": 32, "minRank": "hard", "collisionCooldownFrames": 8, "linkId": "j17-gate" }
+        ]
+      }
+    }
+  }
+}

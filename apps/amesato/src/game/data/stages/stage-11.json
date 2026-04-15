@@ -1,0 +1,57 @@
+{
+  "number": 11,
+  "variants": {
+    "route-a": {
+      "bannerColor": "0xf4f4f4",
+      "paletteId": "routeALate",
+      "arena": {
+        "kind": "basic",
+        "clearMessage": "11면 {{route.label}} 상층을 돌파했다",
+        "cards": [
+          { "id": "m11-a", "x": 80, "y": 80, "flips": 1, "scoreBase": 150 },
+          { "id": "m11-b", "x": 176, "y": 128, "flips": 1, "scoreBase": 160 },
+          { "id": "m11-c", "x": 272, "y": 80, "flips": 2, "scoreBase": 190 },
+          { "id": "m11-d", "x": 336, "y": 80, "flips": 2, "scoreBase": 190 },
+          { "id": "m11-e", "x": 432, "y": 128, "flips": 1, "scoreBase": 160 },
+          { "id": "m11-f", "x": 528, "y": 80, "flips": 1, "scoreBase": 150 }
+        ],
+        "obstacles": [
+          { "id": "m11-top-left", "type": "bar_bottom", "x": 112, "y": 160, "width": 128, "height": 12, "collisionCooldownFrames": 8 },
+          { "id": "m11-top-right", "type": "bar_bottom", "x": 400, "y": 160, "width": 128, "height": 12, "collisionCooldownFrames": 8 },
+          { "id": "m11-mid-left", "type": "bar_right", "x": 224, "y": 208, "width": 12, "height": 96, "collisionCooldownFrames": 8 },
+          { "id": "m11-mid-right", "type": "bar_left", "x": 404, "y": 208, "width": 12, "height": 96, "collisionCooldownFrames": 8 },
+          { "id": "m11-bumper-left", "type": "bumper", "x": 256, "y": 256, "width": 32, "height": 32, "collisionCooldownFrames": 8 },
+          { "id": "m11-bumper-right", "type": "bumper", "x": 352, "y": 256, "width": 32, "height": 32, "collisionCooldownFrames": 8 },
+          { "id": "m11-portal-left", "type": "portal", "x": 128, "y": 304, "width": 32, "height": 32, "minRank": "hard", "collisionCooldownFrames": 8, "linkId": "m11-gate" },
+          { "id": "m11-portal-right", "type": "portal", "x": 480, "y": 304, "width": 32, "height": 32, "minRank": "hard", "collisionCooldownFrames": 8, "linkId": "m11-gate" }
+        ]
+      }
+    },
+    "route-b": {
+      "bannerColor": "0xd2d2d2",
+      "paletteId": "routeBLate",
+      "arena": {
+        "kind": "basic",
+        "clearMessage": "11면 {{route.label}} 전층을 돌파했다",
+        "cards": [
+          { "id": "j11-a", "x": 96, "y": 88, "flips": 1, "scoreBase": 150 },
+          { "id": "j11-b", "x": 192, "y": 136, "flips": 1, "scoreBase": 160 },
+          { "id": "j11-c", "x": 288, "y": 88, "flips": 2, "scoreBase": 190 },
+          { "id": "j11-d", "x": 320, "y": 88, "flips": 2, "scoreBase": 190 },
+          { "id": "j11-e", "x": 416, "y": 136, "flips": 1, "scoreBase": 160 },
+          { "id": "j11-f", "x": 512, "y": 88, "flips": 1, "scoreBase": 150 }
+        ],
+        "obstacles": [
+          { "id": "j11-top-left", "type": "bar_bottom", "x": 128, "y": 168, "width": 96, "height": 12, "collisionCooldownFrames": 8 },
+          { "id": "j11-top-right", "type": "bar_bottom", "x": 416, "y": 168, "width": 96, "height": 12, "collisionCooldownFrames": 8 },
+          { "id": "j11-bottom-left", "type": "bar_top", "x": 128, "y": 272, "width": 96, "height": 12, "collisionCooldownFrames": 8 },
+          { "id": "j11-bottom-right", "type": "bar_top", "x": 416, "y": 272, "width": 96, "height": 12, "collisionCooldownFrames": 8 },
+          { "id": "j11-bumper-left", "type": "bumper", "x": 240, "y": 224, "width": 32, "height": 32, "collisionCooldownFrames": 8 },
+          { "id": "j11-bumper-right", "type": "bumper", "x": 368, "y": 224, "width": 32, "height": 32, "collisionCooldownFrames": 8 },
+          { "id": "j11-turret-left", "type": "turret_slow", "x": 80, "y": 232, "width": 32, "height": 32, "minRank": "lunatic", "fireIntervalFrames": 250, "turretPattern": "aimed" },
+          { "id": "j11-turret-right", "type": "turret_slow", "x": 528, "y": 232, "width": 32, "height": 32, "minRank": "lunatic", "fireIntervalFrames": 250, "turretPattern": "aimed" }
+        ]
+      }
+    }
+  }
+}

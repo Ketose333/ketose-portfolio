@@ -1,0 +1,84 @@
+{
+  "number": 1,
+  "variant": {
+    "bannerColor": "0xffffff",
+    "paletteId": "shrine",
+    "arena": {
+      "kind": "basic",
+      "clearMessage": "1면 봉인이 풀렸다",
+      "cards": [
+        {
+          "id": "s1-a",
+          "x": 96,
+          "y": 72,
+          "flips": 1,
+          "scoreBase": 100
+        },
+        {
+          "id": "s1-b",
+          "x": 176,
+          "y": 120,
+          "flips": 1,
+          "scoreBase": 110
+        },
+        {
+          "id": "s1-c",
+          "x": 256,
+          "y": 88,
+          "flips": 1,
+          "scoreBase": 120
+        },
+        {
+          "id": "s1-d",
+          "x": 352,
+          "y": 88,
+          "flips": 1,
+          "scoreBase": 120
+        },
+        {
+          "id": "s1-e",
+          "x": 432,
+          "y": 120,
+          "flips": 1,
+          "scoreBase": 110
+        },
+        {
+          "id": "s1-f",
+          "x": 512,
+          "y": 72,
+          "flips": 1,
+          "scoreBase": 100
+        }
+      ],
+      "obstacles": [
+        {
+          "id": "s1-bar-west",
+          "type": "bar_bottom",
+          "x": 144,
+          "y": 200,
+          "width": 96,
+          "height": 12,
+          "collisionCooldownFrames": 8
+        },
+        {
+          "id": "s1-bar-east",
+          "type": "bar_bottom",
+          "x": 400,
+          "y": 200,
+          "width": 96,
+          "height": 12,
+          "collisionCooldownFrames": 8
+        },
+        {
+          "id": "s1-bumper",
+          "type": "bumper",
+          "x": 304,
+          "y": 232,
+          "width": 32,
+          "height": 32,
+          "collisionCooldownFrames": 8
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "number": 15,
+  "variants": {
+    "route-a": {
+      "bannerColor": "0xffffff",
+      "paletteId": "routeALate",
+      "arena": {
+        "kind": "boss",
+        "rankProfileId": "shared-boss",
+        "routes": {
+          "route-a": {
+            "bossName": "관측 관리자",
+            "clearMessage": "{{route.branchLabel}} 최종 접근 구역에 도달했다",
+            "bannerColor": "0xf4f4f4",
+            "bossFill": "0x151515",
+            "bossAccent": "0xffffff",
+            "patternId": "route-a-ascent"
+          },
+          "route-b": {
+            "bossName": "잔류 의지의 화신",
+            "clearMessage": "{{route.branchLabel}} 최종 접근 구역에 도달했다",
+            "bannerColor": "0xbdbdbd",
+            "bossFill": "0x111111",
+            "bossAccent": "0xf0f0f0",
+            "patternId": "route-b-ascent"
+          }
+        }
+      }
+    },
+    "route-b": {
+      "bannerColor": "0xd0d0d0",
+      "paletteId": "routeBLate",
+      "arena": {
+        "kind": "boss",
+        "rankProfileId": "shared-boss",
+        "routes": {
+          "route-a": {
+            "bossName": "관측 관리자",
+            "clearMessage": "{{route.branchLabel}} 최종 접근 구역에 도달했다",
+            "bannerColor": "0xf4f4f4",
+            "bossFill": "0x151515",
+            "bossAccent": "0xffffff",
+            "patternId": "route-a-ascent"
+          },
+          "route-b": {
+            "bossName": "잔류 의지의 화신",
+            "clearMessage": "{{route.branchLabel}} 최종 접근 구역에 도달했다",
+            "bannerColor": "0xbdbdbd",
+            "bossFill": "0x111111",
+            "bossAccent": "0xf0f0f0",
+            "patternId": "route-b-ascent"
+          }
+        }
+      }
+    }
+  }
+}

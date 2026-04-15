@@ -1,0 +1,20 @@
+{
+  "name": "portfolio-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build:theme": "node scripts/build-theme-css.mjs",
+    "check:nulsight-ui": "node scripts/check-nulsight-style-boundaries.mjs",
+    "dev:site": "npm run dev --workspace @portfolio/site",
+    "dev:amesato": "npm run dev --workspace @portfolio/amesato",
+    "dev:nulsight": "npm run dev --workspace @portfolio/nulsight",
+    "build:site": "npm run build --workspace @portfolio/site",
+    "build:amesato": "npm run build --workspace @portfolio/amesato",
+    "build:nulsight": "npm run check:nulsight-ui && npm run build --workspace @portfolio/nulsight",
+    "check:theme": "node scripts/check-theme-tokens.mjs"
+  }
+}
