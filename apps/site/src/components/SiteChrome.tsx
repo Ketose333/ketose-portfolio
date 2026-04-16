@@ -55,6 +55,12 @@ export function SiteChrome({ children }: PropsWithChildren) {
             <p className="ui-shell-chrome__footer-copy">Ketose portfolio.</p>
           </div>
           <div className="ui-shell-chrome__footer-links">
+            <a className="ui-shell-chrome__footer-link" href={portfolioUrls.amesato}>
+              Amesato
+            </a>
+            <a className="ui-shell-chrome__footer-link" href={portfolioUrls.nulsight}>
+              Nulsight
+            </a>
             <a className="ui-shell-chrome__footer-link" href={portfolioUrls.github}>
               Repository
             </a>

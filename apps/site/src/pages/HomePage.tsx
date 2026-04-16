@@ -12,6 +12,12 @@ const capabilityRows = [
   },
 ] as const
 
+const heroLinks = [
+  { label: 'Amesato', value: portfolioUrls.amesatoLabel, href: portfolioUrls.amesato },
+  { label: 'Nulsight', value: portfolioUrls.nulsightLabel, href: portfolioUrls.nulsight },
+  { label: 'GitHub', value: 'Ketose333/ketose-portfolio', href: portfolioUrls.github },
+] as const
+
 const stackGroups = [
   {
     title: 'Surface',
@@ -27,85 +33,83 @@ const stackGroups = [
 
 const projectCards = [
   {
-    label: '슈팅',
     title: 'Amesato',
-    summary: '브라우저 슈팅 게임. 플레이 감각과 화면 리듬을 다듬고 있습니다.',
+    summary: '20스테이지 캠페인 슈팅. HUD와 플레이 리듬을 함께 조정 중.',
     details: ['20-stage campaign', 'HUD tuned for play'],
     note: '슈팅 게임',
     href: portfolioUrls.amesato,
   },
   {
-    label: '카드게임',
     title: 'Nulsight',
-    summary: '브라우저 카드게임 프로젝트. 듀얼 화면과 outgame 구조를 함께 정리하고 있습니다.',
+    summary: 'TCG 표면과 outgame(덱·로비)을 한 셸 위에 묶는 중.',
     details: ['TCG surface', 'deck + lobby flow'],
     note: 'TCG 웹게임',
     href: portfolioUrls.nulsight,
   },
 ] as const
 
+const methodRows = [
+  {
+    title: '공용 구조, 분리된 분위기',
+    body: '같은 틀을 쓰되 프로젝트의 분위기는 나눕니다.',
+  },
+  {
+    title: '얇게 공유, 표면은 따로',
+    body: '셸과 프레임부터 공유하고 앱 고유 표면은 남겨 둡니다.',
+  },
+  {
+    title: '복붙보다 책임 위치',
+    body: '공용화는 코드를 줄이기보다 책임을 어디에 둘지 결정하는 일에 가깝습니다.',
+  },
+  {
+    title: '레이아웃부터',
+    body: 'UI는 줄바꿈·여백·정보 위계, 그리고 실제 사용 흐름 순으로 봅니다.',
+  },
+] as const
+
 export function HomePage() {
   return (
     <AppFrame as="main" innerClassName="page" maxWidth="1180px" gutter="48px">
-      <section className="hero-stage" id="top">
-        <div className="hero-stage__main">
-          <SectionIntro
-            className="hero-stage__intro"
-            eyebrow="포트폴리오"
-            title="한 레포 안에서 게임 화면과 제품 구조를 다듬습니다."
-            titleAs="h1"
-            description={
-              <p className="lead lead--hero">
-                <strong>Amesato</strong>, <strong>Nulsight</strong>, 공용 레이어를 함께 관리합니다.
-              </p>
-            }
-            eyebrowClassName="kicker"
-          />
+      <section className="hero" id="top">
+        <SectionIntro
+          className="hero__intro"
+          title="게임 두 개와 그 사이를 짭니다."
+          titleAs="h1"
+          description={
+            <p className="lead lead--hero">
+              <strong>Amesato</strong>와 <strong>Nulsight</strong>, 그리고 둘이 같이 쓰는 셸·프레임·서비스 레이어.
+            </p>
+          }
+        />
 
-          <div className="hero-actions">
-            <ButtonSurface as="a" className="button" href={portfolioUrls.amesato} variant="solid">
-              Amesato 플레이
-            </ButtonSurface>
-            <ButtonSurface as="a" className="button button--ghost" href={portfolioUrls.nulsight} variant="ghost">
-              Nulsight 플레이
-            </ButtonSurface>
-          </div>
-
-          <div className="signal-grid" aria-label="작업 성격">
-            {capabilityRows.map((row) => (
-              <article className="signal-card" key={row.label}>
-                <p className="signal-card__label">{row.label}</p>
-                <strong className="signal-card__value">{row.value}</strong>
-              </article>
-            ))}
-          </div>
+        <div className="hero-actions">
+          <ButtonSurface as="a" className="button" href={portfolioUrls.amesato} variant="solid">
+            Amesato 플레이
+          </ButtonSurface>
+          <ButtonSurface as="a" className="button button--ghost" href={portfolioUrls.nulsight} variant="ghost">
+            Nulsight 플레이
+          </ButtonSurface>
         </div>
 
-        <aside className="hero-stage__rail">
-          <PanelSurface as="section" className="rail-panel rail-panel--dense">
-            <p className="panel__label">바로가기</p>
-            <dl className="facts">
-              <div>
-                <dt>Amesato</dt>
-                <dd>
-                  <a href={portfolioUrls.amesato}>{portfolioUrls.amesatoLabel}</a>
-                </dd>
-              </div>
-              <div>
-                <dt>Nulsight</dt>
-                <dd>
-                  <a href={portfolioUrls.nulsight}>{portfolioUrls.nulsightLabel}</a>
-                </dd>
-              </div>
-              <div>
-                <dt>GitHub</dt>
-                <dd>
-                  <a href={portfolioUrls.github}>Ketose333/ketose-portfolio</a>
-                </dd>
-              </div>
-            </dl>
-          </PanelSurface>
-        </aside>
+        <dl className="signal-list" aria-label="작업 성격">
+          {capabilityRows.map((row) => (
+            <div className="signal-list__row" key={row.label}>
+              <dt className="signal-list__label">{row.label}</dt>
+              <dd className="signal-list__value">{row.value}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <dl className="hero-links" aria-label="바로가기">
+          {heroLinks.map((link) => (
+            <div className="hero-links__row" key={link.label}>
+              <dt className="hero-links__label">{link.label}</dt>
+              <dd className="hero-links__value">
+                <a href={link.href}>{link.value}</a>
+              </dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
       <section className="section" id="projects">
@@ -118,11 +122,8 @@ export function HomePage() {
         />
         <div className="project-showcase">
           {projectCards.map((card) => (
-            <PanelSurface as="article" className="project-panel" padding="lg" tone="strong" key={card.title}>
-              <div className="project-panel__head">
-                <p className="panel__label">{card.label}</p>
-                <h3>{card.title}</h3>
-              </div>
+            <PanelSurface as="article" className="project-panel" key={card.title}>
+              <h3 className="project-panel__title">{card.title}</h3>
               <p className="project-panel__summary">{card.summary}</p>
               <ul className="detail-list">
                 {card.details.map((detail) => (
@@ -141,7 +142,7 @@ export function HomePage() {
       </section>
 
       <section className="section section--split">
-        <section className="section" id="system">
+        <section className="section section--unboxed" id="system">
           <SectionIntro
             className="section__header"
             eyebrow="구조"
@@ -151,20 +152,20 @@ export function HomePage() {
           />
           <div className="stack-grid">
             {stackGroups.map((group) => (
-              <PanelSurface as="article" className="panel panel--structured" key={group.title}>
-                <h3>{group.title}</h3>
-                <p className="panel__summary">{group.summary}</p>
+              <article className="stack-group" key={group.title}>
+                <h3 className="stack-group__title">{group.title}</h3>
+                <p className="stack-group__summary">{group.summary}</p>
                 <ul className="chip-list">
                   {group.items.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
-              </PanelSurface>
+              </article>
             ))}
           </div>
         </section>
 
-        <section className="section" id="method">
+        <section className="section section--unboxed" id="method">
           <SectionIntro
             className="section__header"
             eyebrow="원칙"
@@ -172,22 +173,17 @@ export function HomePage() {
             titleAs="h2"
             eyebrowClassName="kicker"
           />
-          <PanelSurface as="div" className="method-card">
-            <div className="method-row">
-              <span>1</span>
-              <div>
-                <strong>공용 구조, 분리된 분위기</strong>
-                <p>같은 틀을 쓰되 프로젝트의 분위기는 나눕니다.</p>
-              </div>
-            </div>
-            <div className="method-row">
-              <span>2</span>
-              <div>
-                <strong>얇게 공유</strong>
-                <p>셸과 프레임부터 공유하고 앱 고유 표면은 남겨 둡니다.</p>
-              </div>
-            </div>
-          </PanelSurface>
+          <ol className="method-list">
+            {methodRows.map((row, index) => (
+              <li className="method-row" key={row.title}>
+                <span className="method-row__num">{index + 1}</span>
+                <div className="method-row__body">
+                  <strong>{row.title}</strong>
+                  <p>{row.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </section>
       </section>
     </AppFrame>
