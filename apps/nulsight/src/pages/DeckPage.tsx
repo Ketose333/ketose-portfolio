@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { readAuthSession } from '@portfolio/account-client'
+import { mapDeckError } from '../app/api/errors'
 import { postJson, readJson } from '../app/api/client'
 import { ActionDialog } from '../app/components/ActionDialog'
 import { readClipboardTextSafe, writeClipboardTextSafe } from '../client/ui/clipboard'
@@ -242,7 +243,7 @@ export function DeckPage() {
       `/api/deck?action=slots&agentId=${encodeURIComponent(authUser.username)}`,
     )
     if (!response.ok) {
-      setStatus(response.error || '덱 슬롯을 다시 불러오지 못했습니다.')
+      setStatus(mapDeckError(response.error || ''))
       return
     }
 
@@ -262,7 +263,7 @@ export function DeckPage() {
         slotId,
       })
       if (!response.ok) {
-        setStatus(response.error || '슬롯 전환에 실패했습니다.')
+        setStatus(mapDeckError(response.error || ''))
         return
       }
       const nextSlots = response.slots || []
@@ -304,7 +305,7 @@ export function DeckPage() {
         agentId: authUser.username,
         deck,
       })
-      setStatus(response.ok ? '덱을 저장했습니다.' : response.error || '덱 저장에 실패했습니다.')
+      setStatus(response.ok ? '덱을 저장했습니다.' : mapDeckError(response.error || ''))
       if (response.ok) {
         await refreshSlots(activeSlotId)
       }
@@ -323,7 +324,7 @@ export function DeckPage() {
         name,
       })
       if (!response.ok) {
-        setStatus(response.error || '슬롯 생성에 실패했습니다.')
+        setStatus(mapDeckError(response.error || ''))
         return
       }
       await refreshSlots(response.activeSlotId)
@@ -342,7 +343,7 @@ export function DeckPage() {
         slotId: activeSlotId,
       })
       if (!response.ok) {
-        setStatus(response.error || '슬롯 삭제에 실패했습니다.')
+        setStatus(mapDeckError(response.error || ''))
         return
       }
       await refreshSlots(response.activeSlotId)

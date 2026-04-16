@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { loginAccount, readAuthSession } from '@portfolio/account-client'
+import { mapAuthError } from '../app/api/errors'
 import { ButtonSurface, FieldGroup, PanelSurface, SectionIntro } from '@portfolio/ui-shell'
 import { NulsightPageFrame } from '../app/components/NulsightPageFrame'
 
@@ -51,7 +52,7 @@ export function LoginPage() {
       })
 
       if (!response.ok) {
-        setStatus(`로그인 실패: ${response.error || 'error'}`)
+        setStatus(`로그인 실패: ${mapAuthError(response.error || '')}`)
         return
       }
 

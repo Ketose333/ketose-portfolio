@@ -1,4 +1,4 @@
-const { send, parseBody } = require('../../lib/http');
+const { send, parseBody, sendServerError } = require('../../lib/http');
 const { requireAuth } = require('../../lib/auth-service');
 const { createDeckPost, listDeckPosts, getDeckPost, deleteDeckPost, bumpMetric } = require('../../lib/deck-hub-store');
 const { decodeDeckCodeSummary } = require('../../lib/deck-codec');
@@ -107,6 +107,7 @@ module.exports = async (req, res) => {
 
     return send(res, 405, { ok: false, error: 'method not allowed' });
   } catch (e) {
-    return send(res, 500, { ok: false, error: 'DECK_HUB_SERVER_ERROR' });
+    console.error('[nulsight][deck-hub]', e);
+    return sendServerError(res, 'DECK_HUB_SERVER_ERROR');
   }
 };

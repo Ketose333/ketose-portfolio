@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { registerAccount } from '@portfolio/account-client'
+import { mapAuthError } from '../app/api/errors'
 import { ButtonSurface, FieldGroup, PanelSurface, SectionIntro } from '@portfolio/ui-shell'
 import { NulsightPageFrame } from '../app/components/NulsightPageFrame'
 
@@ -37,7 +38,7 @@ export function RegisterPage() {
       })
 
       if (!response.ok) {
-        setStatus(`회원가입 실패: ${response.error || 'error'}`)
+        setStatus(`회원가입 실패: ${mapAuthError(response.error || '')}`)
         return
       }
 

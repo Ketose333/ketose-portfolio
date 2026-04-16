@@ -1,5 +1,6 @@
 function send(res, code, body) {
   res.statusCode = code;
+  res.setHeader('cache-control', 'no-store');
   res.setHeader('content-type', 'application/json; charset=utf-8');
   res.end(JSON.stringify(body));
 }
@@ -13,4 +14,8 @@ function parseBody(req) {
   return {};
 }
 
-module.exports = { send, parseBody };
+function sendServerError(res, error = 'INTERNAL_SERVER_ERROR', statusCode = 500) {
+  return send(res, statusCode, { ok: false, error });
+}
+
+module.exports = { send, parseBody, sendServerError };

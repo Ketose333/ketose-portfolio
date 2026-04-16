@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAccountDisplayName, readAuthSession } from '@portfolio/account-client'
+import { mapDeckHubError } from '../app/api/errors'
 import { SectionIntro } from '@portfolio/ui-shell'
 import { postJson, readJson } from '../app/api/client'
 import { ActionDialog } from '../app/components/ActionDialog'
@@ -187,7 +188,7 @@ export function DeckHubPage() {
         `/api/deck-hub?q=${encodeURIComponent(query.trim())}&sort=${encodeURIComponent(sort)}&limit=${PAGE_SIZE}&offset=${nextOffset}`,
       )
       if (!response.ok) {
-        setStatus(response.error || '허브 목록을 불러오지 못했습니다.')
+        setStatus(mapDeckHubError(response.error || ''))
         return
       }
 
@@ -215,7 +216,7 @@ export function DeckHubPage() {
       })
 
       if (!response.ok) {
-        setStatus(`업로드 실패: ${response.error || 'error'}`)
+        setStatus(`업로드 실패: ${mapDeckHubError(response.error || '')}`)
         return
       }
 
@@ -235,7 +236,7 @@ export function DeckHubPage() {
     try {
       const detail = await readJson<DeckHubDetailResponse>(`/api/deck-hub?action=detail&id=${encodeURIComponent(id)}`)
       if (!detail.ok || !detail.post) {
-        setStatus('덱 정보를 불러오지 못했습니다.')
+        setStatus(mapDeckHubError(detail.error || ''))
         return
       }
       await postJson<{ ok: boolean; error?: string }>('/api/deck-hub?action=import', { id })
@@ -250,7 +251,7 @@ export function DeckHubPage() {
     try {
       const response = await postJson<{ ok: boolean; error?: string }>('/api/deck-hub?action=delete', { id })
       if (!response.ok) {
-        setStatus('삭제에 실패했습니다.')
+        setStatus(mapDeckHubError(response.error || ''))
         return
       }
       setStatus('허브에서 삭제했습니다.')

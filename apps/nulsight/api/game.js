@@ -1,4 +1,4 @@
-const { send, parseBody } = require('../lib/http');
+const { send, parseBody, sendServerError } = require('../lib/http');
 const { getRoom, setRoom, touchRoomPresence, withRoomMutationLock } = require('../lib/store');
 const { applyAction } = require('../lib/game');
 const { requireAuth } = require('../lib/auth-service');
@@ -66,6 +66,7 @@ module.exports = async (req, res) => {
     return send(res, response.status, response.body);
   } catch (error) {
     if (error?.code === 'ROOM_BUSY') return send(res, 409, { ok: false, error: 'room busy' });
-    throw error;
+    console.error('[nulsight][game]', error);
+    return sendServerError(res, 'GAME_SERVER_ERROR');
   }
 };

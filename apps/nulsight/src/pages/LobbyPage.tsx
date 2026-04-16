@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { getAccountDisplayName, readAuthSession } from '@portfolio/account-client'
 import { ButtonSurface, FieldGroup, PanelSurface, SectionIntro } from '@portfolio/ui-shell'
 import { postJson, readJson } from '../app/api/client'
+import { mapRoomError } from '../app/api/errors'
 import { NulsightPageFrame } from '../app/components/NulsightPageFrame'
 import { loadSavedAgent, loadSavedRoom, saveAgent, saveRoom } from '../client/game/persistence'
 import { buildGameUrl, sanitizeRoomId } from '../client/game/room'
@@ -104,12 +105,10 @@ export function LobbyPage() {
             navigate(buildGameUrl(roomId, authUser.username))
           }
         } else {
-          setStatus(response.error || '방을 찾을 수 없습니다.')
+          setStatus(mapRoomError(response.error || ''))
         }
       } catch {
-        if (!cancelled) {
-          setStatus('방 상태를 불러오지 못했습니다.')
-        }
+        if (!cancelled) setStatus('방 상태를 불러오지 못했습니다.')
       } finally {
         if (!cancelled && !silent) {
           setBusy(null)
@@ -140,7 +139,7 @@ export function LobbyPage() {
       })
 
       if (!response.ok || !response.roomId) {
-        setStatus(response.error || '방 생성에 실패했습니다.')
+        setStatus(mapRoomError(response.error || ''))
         return
       }
 
@@ -166,7 +165,7 @@ export function LobbyPage() {
         `/api/rooms?action=state&roomId=${encodeURIComponent(roomId)}`,
       )
       setRoomState(response)
-      setStatus(response.ok ? '방 상태 확인됨' : response.error || '방을 찾을 수 없습니다.')
+      setStatus(response.ok ? '방 상태 확인됨' : mapRoomError(response.error || ''))
     } catch {
       setStatus('방 상태를 불러오지 못했습니다.')
     } finally {
@@ -188,7 +187,7 @@ export function LobbyPage() {
       })
 
       if (!response.ok) {
-        setStatus(response.error || '입장에 실패했습니다.')
+        setStatus(mapRoomError(response.error || ''))
         return
       }
 
