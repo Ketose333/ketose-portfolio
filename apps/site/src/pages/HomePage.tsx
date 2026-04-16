@@ -73,7 +73,12 @@ export function HomePage() {
       <section className="hero" id="top">
         <SectionIntro
           className="hero__intro"
-          title="게임 두 개와 그 사이를 짭니다."
+          title={
+            <>
+              게임 두 개와
+              <br />그 사이를 짭니다.
+            </>
+          }
           titleAs="h1"
           description={
             <p className="lead lead--hero">
