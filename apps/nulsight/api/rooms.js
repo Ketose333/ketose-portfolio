@@ -14,6 +14,8 @@ const { getUserPublic, requireAuth, requireMaintenanceAccess } = require('../lib
 const { isMatchLive, getResultSnapshot, startMatch, markMatchEnded, toRoomStatePayload } = require('../lib/match-state');
 
 const INACTIVE_TIMEOUT_MS = 120 * 1000;
+const ROOM_ID_RE = /^[0-9a-f]{6}$/;
+const MAX_ROOM_ID_ATTEMPTS = 12;
 
 async function buildAgentNames(agents = []) {
   const names = {};
@@ -46,6 +48,32 @@ function applyInactiveForfeit(room, viewerId) {
   return true;
 }
 
+function isValidRoomId(roomId) {
+  return ROOM_ID_RE.test(String(roomId || '').trim());
+}
+
+async function createUniqueRoom(ownerId) {
+  for (let attempt = 0; attempt < MAX_ROOM_ID_ATTEMPTS; attempt += 1) {
+    const candidate = randomUUID().replace(/-/g, '').slice(0, 6);
+    try {
+      const result = await withRoomMutationLock(candidate, async () => {
+        const existing = await getRoom(candidate);
+        if (existing) return null;
+        const now = Date.now();
+        const room = { roomId: candidate, ownerId, agents: [ownerId], game: null, createdAt: now, updatedAt: now };
+        await setRoom(candidate, room);
+        await replaceRoomPresence(candidate, { [ownerId]: now });
+        return { room, now };
+      });
+      if (result) return result;
+    } catch (error) {
+      if (error?.code === 'ROOM_BUSY') continue;
+      throw error;
+    }
+  }
+  return null;
+}
+
 module.exports = async (req, res) => {
   const auth = await requireAuth(req, res, send);
   if (!auth) return;
@@ -55,6 +83,7 @@ module.exports = async (req, res) => {
     if (action !== 'state') return send(res, 400, { ok: false, error: 'action required' });
     const roomId = String(req.query.roomId || '').trim();
     if (!roomId) return send(res, 400, { ok: false, error: 'roomId required' });
+    if (!isValidRoomId(roomId)) return send(res, 400, { ok: false, error: 'invalid roomId' });
     let room = await getRoom(roomId);
     if (!room) return send(res, 404, { ok: false, error: 'room not found' });
     const agents = Array.isArray(room.agents) ? room.agents : [];
@@ -93,7 +122,8 @@ module.exports = async (req, res) => {
         includeAgents: [],
         hideGame: true,
         restricted: true,
-        agentNames
+        includeOwner: false,
+        agentNames: {}
       }));
     }
 
@@ -110,11 +140,10 @@ module.exports = async (req, res) => {
 
   if (action === 'create') {
     const agentId = auth.username;
-    const roomId = randomUUID().replace(/-/g, '').slice(0, 6);
-    const now = Date.now();
-    const room = { roomId, ownerId: agentId, agents: [agentId], game: null, createdAt: now, updatedAt: now };
-    await setRoom(roomId, room);
-    await replaceRoomPresence(roomId, { [agentId]: now });
+    const created = await createUniqueRoom(agentId);
+    if (!created) return send(res, 503, { ok: false, error: 'room allocation failed' });
+    const roomId = created.room.roomId;
+    const room = created.room;
     const agentNames = await buildAgentNames(room.agents);
     return send(res, 201, toRoomStatePayload(room, {
       includeAgents: room.agents,
@@ -130,6 +159,7 @@ module.exports = async (req, res) => {
     const roomId = String(body.roomId || '').trim();
     const agentId = auth.username;
     if (!roomId) return send(res, 400, { ok: false, error: 'roomId required' });
+    if (!isValidRoomId(roomId)) return send(res, 400, { ok: false, error: 'invalid roomId' });
     try {
       const result = await withRoomMutationLock(roomId, async () => {
         const room = await getRoom(roomId);
@@ -185,6 +215,7 @@ module.exports = async (req, res) => {
     const roomId = String(body.roomId || '').trim();
     const agents = Array.isArray(body.agents) && body.agents.length ? body.agents.map(String).slice(0, 2) : null;
     if (!roomId) return send(res, 400, { ok: false, error: 'roomId required' });
+    if (!isValidRoomId(roomId)) return send(res, 400, { ok: false, error: 'invalid roomId' });
     if (!agents) return send(res, 400, { ok: false, error: 'agents required' });
     try {
       const result = await withRoomMutationLock(roomId, async () => {
