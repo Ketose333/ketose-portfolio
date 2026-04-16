@@ -3,10 +3,11 @@ const { loadKV, canUseKV, tryKV, withLegacy, aliasGlobalStore } = require('./sto
 const kv = loadKV();
 const mem = aliasGlobalStore('__portfolio_nulsight_deck_hub_store', '__nulsight_deck_hub_store', () => ({
   list: [],
-  byId: new Map()
-});
+  byId: new Map(),
+}));
 
 const [LIST_KEY, LEGACY_LIST_KEY] = withLegacy(['deckhub', 'list']);
+const HUB_LIST_LIMIT = 500;
 
 function itemKeys(id) {
   return withLegacy(['deckhub', 'item', id]);
@@ -29,20 +30,67 @@ function normalizeTags(tags) {
   return [...new Set(tags.map((x) => String(x || '').trim()).filter(Boolean))].slice(0, 8);
 }
 
+function normalizeListRef(entry) {
+  if (!entry) return null;
+  if (typeof entry === 'string') {
+    try {
+      return normalizeListRef(JSON.parse(entry));
+    } catch {
+      const id = entry.trim();
+      return id ? { id, createdAt: '' } : null;
+    }
+  }
+  if (typeof entry !== 'object') return null;
+  const id = String(entry.id || '').trim();
+  if (!id) return null;
+  return {
+    id,
+    createdAt: String(entry.createdAt || '').trim(),
+  };
+}
+
+function normalizeHubList(list) {
+  return (Array.isArray(list) ? list : [])
+    .map(normalizeListRef)
+    .filter(Boolean)
+    .slice(0, HUB_LIST_LIMIT);
+}
+
+async function readHubListKey(key) {
+  const kind = await kv.type(key);
+  if (kind === 'list') {
+    return normalizeHubList(await kv.lrange(key, 0, HUB_LIST_LIMIT - 1));
+  }
+  if (kind === 'string') {
+    return normalizeHubList(await kv.get(key));
+  }
+  return [];
+}
+
 async function getHubList() {
   const raw = hasKV()
     ? await tryKV(async () => {
-      const current = (await kv.get(LIST_KEY)) || (await kv.get(LEGACY_LIST_KEY));
-      return Array.isArray(current) ? current : [];
+      const current = await readHubListKey(LIST_KEY);
+      if (current.length > 0) return current;
+      return readHubListKey(LEGACY_LIST_KEY);
     }, () => mem.list)
     : mem.list;
-  return Array.isArray(raw) ? raw : [];
+  return normalizeHubList(raw);
 }
 
 async function setHubList(list) {
-  const safeList = Array.isArray(list) ? list : [];
+  const safeList = normalizeHubList(list);
   if (hasKV()) {
-    await tryKV(() => kv.set(LIST_KEY, safeList), () => { mem.list = safeList; });
+    await tryKV(async () => {
+      const [currentType, legacyType] = await Promise.all([kv.type(LIST_KEY), kv.type(LEGACY_LIST_KEY)]);
+      const delKeys = [];
+      if (currentType && currentType !== 'none') delKeys.push(LIST_KEY);
+      if (legacyType && legacyType !== 'none') delKeys.push(LEGACY_LIST_KEY);
+      if (delKeys.length && typeof kv.del === 'function') await kv.del(...delKeys);
+      if (safeList.length > 0) await kv.rpush(LIST_KEY, ...safeList);
+    }, () => {
+      mem.list = safeList;
+    });
     return;
   }
   mem.list = safeList;
@@ -79,17 +127,30 @@ async function createDeckPost({ title, description, author, code, cardsCount, ta
     code: String(code || '').trim(),
     cardsCount: Number(cardsCount) || 0,
     tags: normalizeTags(tags),
-    
     imports: 0,
     createdAt: now,
-    updatedAt: now
+    updatedAt: now,
   };
 
   await setDeckPost(post);
-  const list = await getHubList();
-  const nextList = Array.isArray(list) ? list.slice() : [];
-  nextList.unshift({ id: post.id, createdAt: post.createdAt });
-  await setHubList(nextList.slice(0, 500));
+  const nextRef = { id: post.id, createdAt: post.createdAt };
+
+  if (hasKV()) {
+    await tryKV(async () => {
+      const legacyType = await kv.type(LEGACY_LIST_KEY);
+      if (legacyType && legacyType !== 'none' && typeof kv.del === 'function') {
+        await kv.del(LEGACY_LIST_KEY);
+      }
+      await kv.lpush(LIST_KEY, nextRef);
+      await kv.ltrim(LIST_KEY, 0, HUB_LIST_LIMIT - 1);
+    }, async () => {
+      const nextList = [nextRef, ...mem.list];
+      mem.list = normalizeHubList(nextList);
+    });
+  } else {
+    mem.list = normalizeHubList([nextRef, ...mem.list]);
+  }
+
   return post;
 }
 
@@ -100,7 +161,7 @@ function toTimeMs(v) {
 
 async function listDeckPosts({ q = '', sort = 'latest', limit = 30, offset = 0 }) {
   const refs = await getHubList();
-  const ids = (Array.isArray(refs) ? refs : [])
+  const ids = refs
     .map((r) => (r && typeof r === 'object' ? r.id : null))
     .filter(Boolean);
 
@@ -156,7 +217,7 @@ async function deleteDeckPost(id) {
   }
 
   const refs = await getHubList();
-  const next = (Array.isArray(refs) ? refs : []).filter((r) => String((r && r.id) || '') !== String(id));
+  const next = refs.filter((r) => String((r && r.id) || '') !== String(id));
   await setHubList(next);
   return true;
 }
@@ -174,5 +235,5 @@ module.exports = {
   listDeckPosts,
   getDeckPost,
   deleteDeckPost,
-  bumpMetric
+  bumpMetric,
 };

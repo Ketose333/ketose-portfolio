@@ -11,7 +11,7 @@ const {
   normalizeDeck,
   clearAllDecks
 } = require('../../lib/deck-store');
-const { requireAuth } = require('../../lib/auth-service');
+const { requireAuth, requireMaintenanceAccess } = require('../../lib/auth-service');
 
 module.exports = async (req, res) => {
   const auth = await requireAuth(req, res, send);
@@ -35,6 +35,7 @@ module.exports = async (req, res) => {
     const body = parseBody(req);
 
     if (action === 'clear_all') {
+      if (!requireMaintenanceAccess(req, res, send, body)) return;
       const confirm = String(body.confirm || '').trim();
       if (confirm !== 'CONFIRM_ALL_DECKS') return send(res, 400, { ok: false, error: 'confirm token required' });
       const r = await clearAllDecks();

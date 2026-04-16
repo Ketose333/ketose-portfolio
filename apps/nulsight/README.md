@@ -49,6 +49,7 @@ If you are joining mid-stream, treat `lib/auth-service.js` and `lib/storage-conf
 - Prefer moving reusable server concerns into `packages/` before adding more app-local helpers.
 - Keep runtime compatibility comments when touching persistence, because KV keys still read legacy aliases during migration.
 - Remove old paths only after confirming both the app build and the Playwright audit pass.
+- Destructive maintenance endpoints such as global room/deck clears should stay gated behind `PORTFOLIO_MAINTENANCE_TOKEN`; they are not meant to be available to ordinary authenticated players.
 
 ## Shared assets
 

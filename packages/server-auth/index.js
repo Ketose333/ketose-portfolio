@@ -68,9 +68,6 @@ function createAccountStore({
       return { ok: false, error: 'password must include letters and numbers' };
     }
 
-    const exists = await getUser(normalized);
-    if (exists) return { ok: false, error: 'username already exists' };
-
     const resolvedDisplayName = String(displayName || '').trim().slice(0, 24) || normalized;
     const user = {
       username: normalized,
@@ -80,9 +77,21 @@ function createAccountStore({
     };
 
     if (hasKV()) {
-      const [primaryKey] = userKeys(normalized);
-      await tryKV(() => kv.set(primaryKey, user), () => mem.users.set(normalized, user));
+      const [primaryKey, legacyKey] = userKeys(normalized);
+      const legacyExists = legacyKey ? await tryKV(() => kv.exists(legacyKey), () => 0) : 0;
+      if (legacyExists) return { ok: false, error: 'username already exists' };
+
+      const inserted = await tryKV(
+        () => kv.set(primaryKey, user, { nx: true }),
+        () => {
+          if (mem.users.has(normalized)) return null;
+          mem.users.set(normalized, user);
+          return 'OK';
+        }
+      );
+      if (!inserted) return { ok: false, error: 'username already exists' };
     } else {
+      if (mem.users.has(normalized)) return { ok: false, error: 'username already exists' };
       mem.users.set(normalized, user);
     }
 
@@ -156,7 +165,7 @@ function createAccountStore({
   };
 }
 
-function createCookieSessionAuth({ cookieName = 'bp_session', getSession }) {
+function createCookieSessionAuth({ cookieName = 'bp_session', getSession, secureCookies = process.env.NODE_ENV === 'production' }) {
   function parseCookies(req) {
     const raw = String(req.headers?.cookie || '');
     const out = {};
@@ -171,14 +180,16 @@ function createCookieSessionAuth({ cookieName = 'bp_session', getSession }) {
   }
 
   function setSessionCookie(res, token) {
+    const secureSuffix = secureCookies ? '; Secure' : '';
     res.setHeader(
       'Set-Cookie',
-      `${cookieName}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 30}`,
+      `${cookieName}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 30}${secureSuffix}`,
     );
   }
 
   function clearSessionCookie(res) {
-    res.setHeader('Set-Cookie', `${cookieName}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
+    const secureSuffix = secureCookies ? '; Secure' : '';
+    res.setHeader('Set-Cookie', `${cookieName}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secureSuffix}`);
   }
 
   async function getAuthUser(req) {

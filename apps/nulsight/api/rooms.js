@@ -1,7 +1,15 @@
 const { randomUUID } = require('node:crypto');
 const { send, parseBody } = require('../lib/http');
-const { getRoom, setRoom, clearRoomsByOwner, clearInactiveRooms, clearAllRooms } = require('../lib/store');
-const { getUserPublic, requireAuth } = require('../lib/auth-service');
+const {
+  getRoom,
+  setRoom,
+  clearRoomsByOwner,
+  clearInactiveRooms,
+  clearAllRooms,
+  replaceRoomPresence,
+  touchRoomPresence,
+} = require('../lib/store');
+const { getUserPublic, requireAuth, requireMaintenanceAccess } = require('../lib/auth-service');
 const { isMatchLive, getResultSnapshot, startMatch, markMatchEnded, toRoomStatePayload } = require('../lib/match-state');
 
 const INACTIVE_TIMEOUT_MS = 120 * 1000;
@@ -46,25 +54,36 @@ module.exports = async (req, res) => {
     if (action !== 'state') return send(res, 400, { ok: false, error: 'action required' });
     const roomId = String(req.query.roomId || '').trim();
     if (!roomId) return send(res, 400, { ok: false, error: 'roomId required' });
-    const room = await getRoom(roomId);
+    let room = await getRoom(roomId);
     if (!room) return send(res, 404, { ok: false, error: 'room not found' });
     const agents = Array.isArray(room.agents) ? room.agents : [];
     const isMember = agents.includes(auth.username);
     let finalGame = getResultSnapshot(room);
+    let shouldPersist = false;
     if (isMember) {
-      room.lastSeen = room.lastSeen && typeof room.lastSeen === 'object' ? room.lastSeen : {};
-      room.lastSeen[auth.username] = Date.now();
-      room.updatedAt = Date.now();
-      const changed = applyInactiveForfeit(room, auth.username);
-      if (changed) room.endedBy = 'inactive_timeout';
-      if (room.game?.winnerId) {
-        finalGame = room.game;
-        markMatchEnded(room, finalGame, Date.now());
-      } else if (isMatchLive(room) && room.finalGame) {
-        // 새 게임이 진행 중이면 이전 종료 스냅샷은 정리
-        startMatch(room, room.game);
+      const presence = await touchRoomPresence(roomId, auth.username);
+      room = { ...room, lastSeen: presence.lastSeen };
+
+      // Re-read only when we might mutate match state, so passive polling does not rewrite the room.
+      let latestRoom = room;
+      if (room.game || room.finalGame) {
+        latestRoom = await getRoom(roomId) || room;
+        latestRoom = { ...latestRoom, lastSeen: presence.lastSeen };
       }
-      await setRoom(roomId, room);
+
+      const changed = applyInactiveForfeit(latestRoom, auth.username);
+      if (latestRoom.game?.winnerId) {
+        finalGame = latestRoom.game;
+        markMatchEnded(latestRoom, finalGame, Date.now());
+        shouldPersist = true;
+      } else if (isMatchLive(latestRoom) && latestRoom.finalGame) {
+        // 새 게임이 진행 중이면 이전 종료 스냅샷은 정리
+        startMatch(latestRoom, latestRoom.game);
+        shouldPersist = true;
+      }
+      room = latestRoom;
+      if (changed) room.endedBy = 'inactive_timeout';
+      if (shouldPersist) await setRoom(roomId, room);
     }
     const agentNames = await buildAgentNames(agents);
 
@@ -92,8 +111,9 @@ module.exports = async (req, res) => {
     const agentId = auth.username;
     const roomId = randomUUID().replace(/-/g, '').slice(0, 6);
     const now = Date.now();
-    const room = { roomId, ownerId: agentId, agents: [agentId], game: null, createdAt: now, updatedAt: now, lastSeen: { [agentId]: now } };
+    const room = { roomId, ownerId: agentId, agents: [agentId], game: null, createdAt: now, updatedAt: now };
     await setRoom(roomId, room);
+    await replaceRoomPresence(roomId, { [agentId]: now });
     const agentNames = await buildAgentNames(room.agents);
     return send(res, 201, toRoomStatePayload(room, {
       includeAgents: room.agents,
@@ -132,10 +152,10 @@ module.exports = async (req, res) => {
       startMatch(room, initGame(room.roomId, a1, a2, decksByAgent));
     }
 
-    room.lastSeen = room.lastSeen && typeof room.lastSeen === 'object' ? room.lastSeen : {};
-    room.lastSeen[agentId] = Date.now();
-    room.updatedAt = Date.now();
+    const now = Date.now();
+    room.updatedAt = now;
     await setRoom(roomId, room);
+    await touchRoomPresence(roomId, agentId, now);
     const agentNames = await buildAgentNames(room.agents);
     return send(res, 200, {
       ok: true,
@@ -158,8 +178,9 @@ module.exports = async (req, res) => {
     if (room.ownerId !== auth.username) return send(res, 403, { ok: false, error: 'only owner can reset room' });
     if (!agents) return send(res, 400, { ok: false, error: 'agents required' });
     const now = Date.now();
-    const next = { roomId, ownerId: room.ownerId, agents, game: null, finalGame: null, finalGameAt: null, createdAt: room.createdAt || now, updatedAt: now, lastSeen: { [auth.username]: now } };
+    const next = { roomId, ownerId: room.ownerId, agents, game: null, finalGame: null, finalGameAt: null, createdAt: room.createdAt || now, updatedAt: now };
     await setRoom(roomId, next);
+    await replaceRoomPresence(roomId, { [auth.username]: now });
     const agentNames = await buildAgentNames(next.agents);
     return send(res, 200, { ok: true, roomId, agents: next.agents, game: null, reset: true, agentNames });
   }
@@ -170,11 +191,13 @@ module.exports = async (req, res) => {
   }
 
   if (action === 'clear_inactive') {
+    if (!requireMaintenanceAccess(req, res, send, body)) return;
     const r = await clearInactiveRooms();
     return send(res, 200, { ok: true, ...r, clearedInactive: true });
   }
 
   if (action === 'clear_all') {
+    if (!requireMaintenanceAccess(req, res, send, body)) return;
     const confirm = String(body.confirm || '').trim();
     if (confirm !== 'CONFIRM_ALL_ROOMS') return send(res, 400, { ok: false, error: 'confirm token required' });
     const r = await clearAllRooms();

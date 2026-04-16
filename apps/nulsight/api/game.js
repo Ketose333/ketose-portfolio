@@ -1,5 +1,5 @@
 const { send, parseBody } = require('../lib/http');
-const { getRoom, setRoom } = require('../lib/store');
+const { getRoom, setRoom, touchRoomPresence } = require('../lib/store');
 const { applyAction } = require('../lib/game');
 const { requireAuth } = require('../lib/auth-service');
 const { markMatchEnded } = require('../lib/match-state');
@@ -24,9 +24,9 @@ module.exports = async (req, res) => {
 
   if ('actorId' in action) return send(res, 400, { ok: false, error: 'actorId is server-managed' });
   action.actorId = auth.username;
-  room.lastSeen = room.lastSeen && typeof room.lastSeen === 'object' ? room.lastSeen : {};
-  room.lastSeen[auth.username] = Date.now();
-  room.updatedAt = Date.now();
+  const now = Date.now();
+  room.updatedAt = now;
+  await touchRoomPresence(roomId, auth.username, now);
 
   const result = applyAction(room.game, action);
   const nextGame = result.state;
@@ -46,6 +46,9 @@ module.exports = async (req, res) => {
   }
 
   room.game = nextGame;
+  room.finalGame = null;
+  room.finalGameAt = null;
+  room.endedBy = null;
   await setRoom(roomId, room);
 
   return send(res, 200, { ok: result.ok, reason: result.reason, game: room.game });
