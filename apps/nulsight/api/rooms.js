@@ -74,6 +74,37 @@ async function createUniqueRoom(ownerId) {
   return null;
 }
 
+async function refreshMemberRoomState(roomId, viewerId, presence) {
+  try {
+    return await withRoomMutationLock(roomId, async () => {
+      const latestRoom = await getRoom(roomId);
+      if (!latestRoom) return null;
+
+      const room = { ...latestRoom, lastSeen: presence.lastSeen };
+      let finalGame = getResultSnapshot(room);
+      let shouldPersist = false;
+      const changed = applyInactiveForfeit(room, viewerId);
+
+      if (room.game?.winnerId) {
+        finalGame = room.game;
+        markMatchEnded(room, finalGame, Date.now());
+        shouldPersist = true;
+      } else if (isMatchLive(room) && room.finalGame) {
+        startMatch(room, room.game);
+        shouldPersist = true;
+      }
+
+      if (changed) room.endedBy = 'inactive_timeout';
+      if (shouldPersist) await setRoom(roomId, room);
+
+      return { room, finalGame };
+    });
+  } catch (error) {
+    if (error?.code === 'ROOM_BUSY') return null;
+    throw error;
+  }
+}
+
 module.exports = async (req, res) => {
   try {
     const auth = await requireAuth(req, res, send);
@@ -96,29 +127,33 @@ module.exports = async (req, res) => {
       let shouldPersist = false;
 
       if (isMember) {
-        const presence = await touchRoomPresence(roomId, auth.username);
-        room = { ...room, lastSeen: presence.lastSeen };
+      const presence = await touchRoomPresence(roomId, auth.username);
+      room = { ...room, lastSeen: presence.lastSeen };
 
-        let latestRoom = room;
-        if (room.game || room.finalGame) {
-          latestRoom = await getRoom(roomId) || room;
-          latestRoom = { ...latestRoom, lastSeen: presence.lastSeen };
+      if (room.game || room.finalGame) {
+        const refreshed = await refreshMemberRoomState(roomId, auth.username, presence);
+        if (refreshed) {
+          room = refreshed.room;
+          finalGame = refreshed.finalGame;
+          shouldPersist = false;
+        } else {
+          const latestRoom = await getRoom(roomId);
+          if (latestRoom) {
+            room = { ...latestRoom, lastSeen: presence.lastSeen };
+            finalGame = getResultSnapshot(latestRoom);
+          }
         }
-
-        const changed = applyInactiveForfeit(latestRoom, auth.username);
-        if (latestRoom.game?.winnerId) {
-          finalGame = latestRoom.game;
-          markMatchEnded(latestRoom, finalGame, Date.now());
-          shouldPersist = true;
-        } else if (isMatchLive(latestRoom) && latestRoom.finalGame) {
-          startMatch(latestRoom, latestRoom.game);
+      } else {
+        const changed = applyInactiveForfeit(room, auth.username);
+        if (room.game?.winnerId) {
+          finalGame = room.game;
+          markMatchEnded(room, finalGame, Date.now());
           shouldPersist = true;
         }
-
-        room = latestRoom;
         if (changed) room.endedBy = 'inactive_timeout';
-        if (shouldPersist) await setRoom(roomId, room);
       }
+      if (shouldPersist) await setRoom(roomId, room);
+    }
 
       const agentNames = await buildAgentNames(agents);
 
