@@ -1,6 +1,6 @@
 const { send, parseBody, sendServerError } = require('../lib/http');
 const { getRoom, setRoom, touchRoomPresence, withRoomMutationLock } = require('../lib/store');
-const { applyAction } = require('../lib/game');
+const { applyAction, assertGameState } = require('../lib/game');
 const { requireAuth } = require('../lib/auth-service');
 const { markMatchEnded } = require('../lib/match-state');
 
@@ -33,6 +33,7 @@ module.exports = async (req, res) => {
 
       const result = applyAction(room.game, action);
       const nextGame = result.state;
+      assertGameState(nextGame, `game-action:${action.type}`);
 
       // 매치 종료 시: 룸은 유지(재사용), 게임 상태만 초기화.
       // 단, 상대/관전자 폴링에서 승패 스냅샷을 받을 수 있게 finalGame에 보관한다.

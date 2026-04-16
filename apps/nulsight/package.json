@@ -12,6 +12,7 @@
     "dev": "node build.mjs && vite",
     "build:code": "node build.mjs",
     "typecheck": "tsc -b",
+    "smoke:game": "node scripts/smoke-game.cjs",
     "palette:build": "node ../../scripts/build-theme-css.mjs public/palette.oklch.css public/palette.css",
     "build:verify": "npm run palette:build && node build.mjs && tsc -b && vite build --outDir dist-check --emptyOutDir",
     "build": "npm run palette:build && node build.mjs && tsc -b && vite build",

@@ -193,7 +193,7 @@ module.exports = async (req, res) => {
     }
 
     if (action === 'join') {
-      const { initGame } = require('../lib/game');
+      const { initGame, assertGameState } = require('../lib/game');
       const { getDeck, validateDeck } = require('../lib/deck-store');
       const roomId = String(body.roomId || '').trim();
       const agentId = auth.username;
@@ -216,13 +216,15 @@ module.exports = async (req, res) => {
             if (!a1 || !a2 || a1 === a2) {
               return { status: 409, body: { ok: false, error: 'two distinct agents required' } };
             }
-            const d1 = await getDeck(a1);
-            const d2 = await getDeck(a2);
-            const decksByAgent = {};
-            if (d1 && validateDeck(d1).ok) decksByAgent[a1] = d1;
-            if (d2 && validateDeck(d2).ok) decksByAgent[a2] = d2;
-            startMatch(room, initGame(room.roomId, a1, a2, decksByAgent));
-          }
+          const d1 = await getDeck(a1);
+          const d2 = await getDeck(a2);
+          const decksByAgent = {};
+          if (d1 && validateDeck(d1).ok) decksByAgent[a1] = d1;
+          if (d2 && validateDeck(d2).ok) decksByAgent[a2] = d2;
+          const nextGame = initGame(room.roomId, a1, a2, decksByAgent);
+          assertGameState(nextGame, 'join-init');
+          startMatch(room, nextGame);
+        }
 
           const now = Date.now();
           room.updatedAt = now;
