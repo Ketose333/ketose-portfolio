@@ -1,16 +1,22 @@
+const { randomUUID } = require('node:crypto');
 const { loadKV, canUseKV, tryKV, APP_NAMESPACE, LEGACY_NAMESPACE, namespaced, withLegacy, aliasGlobalStore } = require('./storage-config');
 
 const kv = loadKV();
 const mem = aliasGlobalStore('__portfolio_nulsight_room_store', '__nulsight_room_store', () => new Map());
+const roomLocks = aliasGlobalStore('__portfolio_nulsight_room_lock_store', '__nulsight_room_lock_store', () => new Map());
 
 const ROOM_PREFIX = ['room'];
 const ROOM_META_PREFIX = ['roommeta'];
 const ROOM_GAME_PREFIX = ['roomgame'];
 const ROOM_FINAL_PREFIX = ['roomfinal'];
 const ROOM_PRESENCE_PREFIX = ['roompresence'];
+const ROOM_LOCK_PREFIX = ['roomlock'];
 const INACTIVE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
 const ROOM_TTL_SEC = 60 * 60 * 24;
 const PRESENCE_TTL_SEC = 60 * 60 * 24;
+const ROOM_LOCK_TTL_MS = 5000;
+const ROOM_LOCK_WAIT_MS = 1500;
+const ROOM_LOCK_POLL_MS = 40;
 
 function hasKV() {
   return canUseKV(kv);
@@ -34,6 +40,10 @@ function roomFinalKeys(roomId) {
 
 function roomPresenceKeys(roomId) {
   return withLegacy([...ROOM_PRESENCE_PREFIX, roomId]);
+}
+
+function roomLockKey(roomId) {
+  return namespaced([...ROOM_LOCK_PREFIX, roomId], APP_NAMESPACE);
 }
 
 function roomPattern(prefix, namespace = APP_NAMESPACE) {
@@ -73,6 +83,78 @@ async function deleteStructuredValue(keys) {
   }
   mem.delete(primaryKey);
   if (legacyKey) mem.delete(legacyKey);
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function tryAcquireMemRoomLock(key, token, ttlMs) {
+  const now = Date.now();
+  const current = roomLocks.get(key);
+  if (current && current.expiresAt > now && current.token !== token) return false;
+  roomLocks.set(key, { token, expiresAt: now + ttlMs });
+  return true;
+}
+
+async function tryAcquireRoomLock(roomId, token, ttlMs = ROOM_LOCK_TTL_MS) {
+  const key = roomLockKey(roomId);
+  if (hasKV()) {
+    return tryKV(
+      async () => {
+        const result = await kv.set(key, token, { nx: true, px: ttlMs });
+        return result === 'OK';
+      },
+      () => tryAcquireMemRoomLock(key, token, ttlMs)
+    );
+  }
+  return tryAcquireMemRoomLock(key, token, ttlMs);
+}
+
+async function releaseRoomLock(roomId, token) {
+  const key = roomLockKey(roomId);
+  if (hasKV()) {
+    await tryKV(
+      async () => {
+        const current = await kv.get(key);
+        if (current === token && typeof kv.del === 'function') await kv.del(key);
+      },
+      () => {
+        const current = roomLocks.get(key);
+        if (current?.token === token) roomLocks.delete(key);
+      }
+    );
+    return;
+  }
+
+  const current = roomLocks.get(key);
+  if (current?.token === token) roomLocks.delete(key);
+}
+
+async function withRoomMutationLock(roomId, fn, options = {}) {
+  const roomIdValue = String(roomId || '').trim();
+  if (!roomIdValue) throw new Error('roomId required');
+
+  const waitMs = Number(options.waitMs || ROOM_LOCK_WAIT_MS);
+  const ttlMs = Number(options.ttlMs || ROOM_LOCK_TTL_MS);
+  const pollMs = Number(options.pollMs || ROOM_LOCK_POLL_MS);
+  const token = randomUUID();
+  const start = Date.now();
+
+  while ((Date.now() - start) <= waitMs) {
+    if (await tryAcquireRoomLock(roomIdValue, token, ttlMs)) {
+      try {
+        return await fn();
+      } finally {
+        await releaseRoomLock(roomIdValue, token);
+      }
+    }
+    await sleep(pollMs);
+  }
+
+  const err = new Error('room busy');
+  err.code = 'ROOM_BUSY';
+  throw err;
 }
 
 function normalizePresence(raw) {
@@ -402,5 +484,6 @@ module.exports = {
   getRoomPresence,
   replaceRoomPresence,
   touchRoomPresence,
+  withRoomMutationLock,
   hasKV,
 };

@@ -1,5 +1,5 @@
 const { send, parseBody } = require('../lib/http');
-const { getRoom, setRoom, touchRoomPresence } = require('../lib/store');
+const { getRoom, setRoom, touchRoomPresence, withRoomMutationLock } = require('../lib/store');
 const { applyAction } = require('../lib/game');
 const { requireAuth } = require('../lib/auth-service');
 const { markMatchEnded } = require('../lib/match-state');
@@ -17,39 +17,55 @@ module.exports = async (req, res) => {
   const action = body.action || null;
   if (!roomId || !action) return send(res, 400, { ok: false, error: 'roomId/action required' });
 
-  const room = await getRoom(roomId);
-  if (!room) return send(res, 404, { ok: false, error: 'room not found' });
-  if (room.agents?.length && !room.agents.includes(auth.username)) return send(res, 403, { ok: false, error: 'forbidden' });
-  if (!room.game) return send(res, 409, { ok: false, error: 'game not started' });
-
   if ('actorId' in action) return send(res, 400, { ok: false, error: 'actorId is server-managed' });
   action.actorId = auth.username;
-  const now = Date.now();
-  room.updatedAt = now;
-  await touchRoomPresence(roomId, auth.username, now);
 
-  const result = applyAction(room.game, action);
-  const nextGame = result.state;
+  try {
+    const response = await withRoomMutationLock(roomId, async () => {
+      const room = await getRoom(roomId);
+      if (!room) return { status: 404, body: { ok: false, error: 'room not found' } };
+      if (room.agents?.length && !room.agents.includes(auth.username)) return { status: 403, body: { ok: false, error: 'forbidden' } };
+      if (!room.game) return { status: 409, body: { ok: false, error: 'game not started' } };
 
-  // 매치 종료 시: 룸은 유지(재사용), 게임 상태만 초기화.
-  // 단, 상대/관전자 폴링에서 승패 스냅샷을 받을 수 있게 finalGame에 보관한다.
-  if (nextGame?.winnerId) {
-    markMatchEnded(room, nextGame, Date.now());
-    await setRoom(roomId, room);
-    return send(res, 200, {
-      ok: result.ok,
-      reason: result.reason,
-      game: nextGame,
-      matchEnded: true,
-      roomReset: true
+      const now = Date.now();
+      room.updatedAt = now;
+      await touchRoomPresence(roomId, auth.username, now);
+
+      const result = applyAction(room.game, action);
+      const nextGame = result.state;
+
+      // 매치 종료 시: 룸은 유지(재사용), 게임 상태만 초기화.
+      // 단, 상대/관전자 폴링에서 승패 스냅샷을 받을 수 있게 finalGame에 보관한다.
+      if (nextGame?.winnerId) {
+        markMatchEnded(room, nextGame, Date.now());
+        await setRoom(roomId, room);
+        return {
+          status: 200,
+          body: {
+            ok: result.ok,
+            reason: result.reason,
+            game: nextGame,
+            matchEnded: true,
+            roomReset: true
+          }
+        };
+      }
+
+      room.game = nextGame;
+      room.finalGame = null;
+      room.finalGameAt = null;
+      room.endedBy = null;
+      await setRoom(roomId, room);
+
+      return {
+        status: 200,
+        body: { ok: result.ok, reason: result.reason, game: room.game }
+      };
     });
+
+    return send(res, response.status, response.body);
+  } catch (error) {
+    if (error?.code === 'ROOM_BUSY') return send(res, 409, { ok: false, error: 'room busy' });
+    throw error;
   }
-
-  room.game = nextGame;
-  room.finalGame = null;
-  room.finalGameAt = null;
-  room.endedBy = null;
-  await setRoom(roomId, room);
-
-  return send(res, 200, { ok: result.ok, reason: result.reason, game: room.game });
 };
