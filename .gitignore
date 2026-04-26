@@ -1,8 +1,36 @@
-node_modules
-dist
-.DS_Store
-.turbo
-.vercel
-coverage
-*.log
+# dependencies
+node_modules/
+
+# build outputs
+dist/
+dist-check/
+coverage/
+.turbo/
+.vercel/
 *.tsbuildinfo
+
+# local env and deployment state
+.env
+.env.*
+!.env.example
+*.local
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# test and browser artifacts
+playwright-report/
+test-results/
+blob-report/
+screenshots/
+shots/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

@@ -741,4 +741,160 @@ function applyAction(state, action) {
   return { ok: false, reason: 'unsupported action', state: s };
 }
 
-module.exports = { initGame, applyAction };
+function invariantError(message, details = {}) {
+  const error = new Error(message);
+  error.code = 'GAME_STATE_INVALID';
+  error.details = details;
+  return error;
+}
+
+function assertCardCollection(items, label) {
+  if (!Array.isArray(items)) {
+    throw invariantError(`${label} must be an array`);
+  }
+  for (const key of items) {
+    const normalized = normalizeCardKey(extractCardKey(key));
+    if (!normalized || !CARD_DEFS[normalized]) {
+      throw invariantError(`${label} contains unknown card`, { key, label });
+    }
+  }
+}
+
+function assertGameState(state, context = 'game-state') {
+  if (!state || typeof state !== 'object') {
+    throw invariantError(`${context}: state must be an object`);
+  }
+
+  const agentIds = Object.keys(state.agents || {});
+  if (agentIds.length !== 2) {
+    throw invariantError(`${context}: expected exactly 2 agents`, { agentIds });
+  }
+
+  if (!agentIds.includes(state.activeAgentId) || !agentIds.includes(state.firstAgentId)) {
+    throw invariantError(`${context}: invalid active/first agent`, {
+      activeAgentId: state.activeAgentId,
+      firstAgentId: state.firstAgentId,
+      agentIds,
+    });
+  }
+
+  if (state.winnerId != null && !agentIds.includes(state.winnerId)) {
+    throw invariantError(`${context}: invalid winner`, { winnerId: state.winnerId, agentIds });
+  }
+
+  if (!Number.isInteger(state.turn) || state.turn < 1) {
+    throw invariantError(`${context}: invalid turn`, { turn: state.turn });
+  }
+
+  if (!['draw', 'main', 'battle', 'end'].includes(state.phase)) {
+    throw invariantError(`${context}: invalid phase`, { phase: state.phase });
+  }
+
+  if (!state.priority || !agentIds.includes(state.priority.holderId) || !Number.isInteger(state.priority.passCount) || state.priority.passCount < 0 || state.priority.passCount > 2) {
+    throw invariantError(`${context}: invalid priority state`, { priority: state.priority });
+  }
+
+  if (typeof state.pendingAdvance !== 'boolean') {
+    throw invariantError(`${context}: pendingAdvance must be boolean`, { pendingAdvance: state.pendingAdvance });
+  }
+
+  if (!Array.isArray(state.stack)) {
+    throw invariantError(`${context}: stack must be an array`);
+  }
+
+  if (!state.effectUsage || typeof state.effectUsage !== 'object') {
+    throw invariantError(`${context}: effectUsage must exist`);
+  }
+
+  const referencedUnitIds = new Set();
+
+  for (const agentId of agentIds) {
+    const agent = state.agents[agentId];
+    if (!agent || typeof agent !== 'object') {
+      throw invariantError(`${context}: missing agent payload`, { agentId });
+    }
+
+    if (!Array.isArray(agent.monsterZone) || agent.monsterZone.length !== 3) {
+      throw invariantError(`${context}: monster zone shape invalid`, { agentId, monsterZone: agent.monsterZone });
+    }
+    if (!Array.isArray(agent.spellZone) || agent.spellZone.length !== 4) {
+      throw invariantError(`${context}: spell zone shape invalid`, { agentId, spellZone: agent.spellZone });
+    }
+    if (!Number.isFinite(agent.hp) || !Number.isFinite(agent.mana) || !Number.isFinite(agent.manaMax)) {
+      throw invariantError(`${context}: invalid agent numeric stats`, { agentId, hp: agent.hp, mana: agent.mana, manaMax: agent.manaMax });
+    }
+    if (agent.mana < 0 || agent.manaMax < 0 || agent.manaMax > RULES_CONST.MAX_MANA) {
+      throw invariantError(`${context}: invalid mana bounds`, { agentId, mana: agent.mana, manaMax: agent.manaMax });
+    }
+
+    assertCardCollection(agent.deck, `${context}:${agentId}:deck`);
+    assertCardCollection(agent.hand, `${context}:${agentId}:hand`);
+    assertCardCollection(agent.graveyard, `${context}:${agentId}:graveyard`);
+    assertCardCollection(agent.banished, `${context}:${agentId}:banished`);
+
+    for (const unitId of agent.monsterZone) {
+      if (unitId == null) continue;
+      if (typeof unitId !== 'string' || !state.units?.[unitId]) {
+        throw invariantError(`${context}: monster zone references missing unit`, { agentId, unitId });
+      }
+      if (referencedUnitIds.has(unitId)) {
+        throw invariantError(`${context}: unit referenced twice on board`, { unitId });
+      }
+      referencedUnitIds.add(unitId);
+      const unit = state.units[unitId];
+      if (unit.ownerId !== agentId) {
+        throw invariantError(`${context}: unit owner mismatch`, { agentId, unitId, ownerId: unit.ownerId });
+      }
+    }
+
+    for (const slot of agent.spellZone) {
+      if (slot == null) continue;
+      const key = spellSlotKey(slot);
+      if (!key || !CARD_DEFS[key] || getCardType(key) !== 'spell') {
+        throw invariantError(`${context}: invalid spell slot payload`, { agentId, slot });
+      }
+      if (slot && typeof slot === 'object' && slot.attachedUnitId) {
+        const unit = state.units?.[slot.attachedUnitId];
+        if (!unit || unit.ownerId !== agentId) {
+          throw invariantError(`${context}: equip attached to invalid unit`, { agentId, slot });
+        }
+      }
+    }
+  }
+
+  for (const [unitId, unit] of Object.entries(state.units || {})) {
+    if (!unit || typeof unit !== 'object') {
+      throw invariantError(`${context}: invalid unit payload`, { unitId });
+    }
+    if (!agentIds.includes(unit.ownerId)) {
+      throw invariantError(`${context}: unit owner invalid`, { unitId, ownerId: unit.ownerId });
+    }
+    if (!referencedUnitIds.has(unitId)) {
+      throw invariantError(`${context}: orphan unit found`, { unitId, ownerId: unit.ownerId });
+    }
+    const key = normalizeCardKey(extractCardKey(unit.key));
+    if (!key || !CARD_DEFS[key]) {
+      throw invariantError(`${context}: unit has unknown card key`, { unitId, key: unit.key });
+    }
+    if (!Number.isFinite(unit.hp) || !Number.isFinite(unit.maxHp) || !Number.isFinite(unit.atk)) {
+      throw invariantError(`${context}: invalid unit numeric stats`, { unitId, hp: unit.hp, maxHp: unit.maxHp, atk: unit.atk });
+    }
+    if (unit.maxHp <= 0 || unit.hp <= 0 || unit.hp > unit.maxHp) {
+      throw invariantError(`${context}: unit hp invariant broken`, { unitId, hp: unit.hp, maxHp: unit.maxHp });
+    }
+  }
+
+  for (const entry of state.stack) {
+    if (!entry || typeof entry !== 'object' || !agentIds.includes(entry.actorId)) {
+      throw invariantError(`${context}: invalid stack entry actor`, { entry });
+    }
+    const sourceCardKey = normalizeCardKey(extractCardKey(entry.sourceCardKey));
+    if (!sourceCardKey || !CARD_DEFS[sourceCardKey]) {
+      throw invariantError(`${context}: invalid stack source card`, { entry });
+    }
+  }
+
+  return state;
+}
+
+module.exports = { initGame, applyAction, assertGameState };

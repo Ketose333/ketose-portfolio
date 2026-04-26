@@ -8,8 +8,8 @@
 ## 1. 게임 시작과 승리 조건
 
 - 기본은 1:1 듀얼이다.
-- 각 에이전트 시작 HP는 20이다.
-- 게임 시작 시 각 에이전트는 손패 5장으로 시작한다.
+- 각 플레이어의 시작 HP는 20이다.
+- 게임 시작 시 각 플레이어는 손패 5장으로 시작한다.
 - 상대 HP를 0 이하로 만들면 승리한다.
 - 자신의 덱이 비어 있는데 드로우해야 하면 패배한다.
 
@@ -19,7 +19,7 @@
 
 - 덱은 30장 이상으로 구성한다.
 - 게임 시작 시 덱을 셔플한다.
-- 매 턴 드로우 페이즈에 턴 에이전트는 1장을 드로우한다.
+- 매 턴 드로우 페이즈에 턴 플레이어는 1장을 드로우한다.
 - 현재 구현은 선공도 1턴 드로우를 수행한다.
 
 ---
@@ -135,7 +135,7 @@
 - 카드 효과는 의미를 유지한 상태로 가능한 짧게 표기한다.
 - 권장 압축 표기:
   - `체력 N 회복` → `체력+N`
-  - `상대 에이전트에게 N 피해` → `피해 N(상대 본체)`
+  - `상대 본체에게 N 피해` → `피해 N(상대 본체)`
   - `대상 유닛에게 N 피해` → `피해 N(대상 유닛)`
   - 셔플은 기본 처리로 간주하고 카드 텍스트에는 효과 핵심(탐색/징집)만 표기한다.
   - 조건문 `~ 유닛 N기 이상일 때` → `~ N+일 때`
@@ -177,16 +177,16 @@
 - 제외: 대상 유닛을 무덤 대신 제외 영역으로 보낸다.
 - 자폭: 자신 유닛을 즉시 파괴한다.
 
-가이드 키워드 목록은 [`vercel/public/js/shared-cards.js`](../vercel/public/js/shared-cards.js)의
+가이드 키워드 목록은 [`public/js/shared-cards.js`](../public/js/shared-cards.js)의
 `buildKeywordCatalog()`를 기준으로 자동 동기화한다.
 
 ---
 
 ## 10. 현재 엔진 반영 메모 (구현 동기화)
 
-아래는 현재 `vercel/lib/game.js`, `vercel/public/js/shared-cards.js` 기준의 구현 메모다.
+아래는 현재 API 런타임과 [`public/js/shared-cards.js`](../public/js/shared-cards.js) 기준의 구현 메모다.
 
-- 카드 정의의 단일 소스(SSOT)는 [`vercel/public/js/shared-cards.js`](../vercel/public/js/shared-cards.js) 이다.
+- 카드 정의의 단일 소스(SSOT)는 [`src/shared/shared-cards.js`](../src/shared/shared-cards.js) 이다.
 - 현재 테마 카드 풀은 총 45장이다.
   - 균형 5 / 기어 10 / 알케미스타 10 / 심연 10 / 보급 5 / 의식 5
 
@@ -195,12 +195,12 @@
 - 일반 마법(`spellKind: normal`)은 엔드 페이즈에 정리된다.
 - 카드 효과는 `effects[]`(timing / cost / action) 기준으로 처리된다.
 - 카드 텍스트(`effect`)는 `effects[]` 기반 자동 생성 문자열을 사용한다.
-- 키워드 가이드(`guide.html`)는 카드 정의에서 자동 생성한 키워드를 사용한다.
+- 키워드 가이드(`/guide`)는 카드 정의에서 자동 생성한 키워드를 사용한다.
 - 비용이 필요한 효과는 `cost.mana` 검사/차감 후 실행한다.
 - 효과 1턴 1회 제한은 `effectUsage`로 관리한다.
 - 스택은 `priority_pass` 우선권 루프를 통해 1개씩 해결한다.
 - 탐색(search_deck_to_hand), 징집(deploy_from_deck) 처리 후 덱을 다시 셔플한다.
-- 액션 키는 AI/엔진 해석을 위해 canonical 영문을 사용한다.
+- 액션 키는 엔진 해석을 위해 canonical 영문을 사용한다.
   - `heal_self`, `heal_unit`, `search_deck_to_hand`, `deploy_from_deck`
   - `gain_mana`, `enqueue_stack`, `deal_damage_to_unit`, `deal_damage_to_agent`, `attach_equipment`
 

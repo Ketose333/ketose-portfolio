@@ -1,97 +1,249 @@
-import { projectUrls } from '../config'
+import { useState } from 'react'
+import { portfolioProjectServices, portfolioServiceList, portfolioUrls } from '@portfolio/services'
+import { AppFrame, ButtonSurface, SectionIntro, SectionPanel } from '@portfolio/ui-shell'
+
+const projectDetails = {
+  wizletBudget: {
+    role: '실시간 협업 가계부',
+    summary: 'React/Vite 프론트와 Spring Boot 백엔드로 예산과 지출 기록을 연결했습니다.',
+    points: ['React + Vite', 'Spring Boot', 'WebSocket'],
+  },
+  nulsight: {
+    role: '웹 TCG 클라이언트',
+    summary: '로비, 덱 편집, 덱허브, 듀얼 화면을 하나의 웹 TCG 프로토타입으로 묶었습니다.',
+    points: ['Lobby', 'Deck Builder', 'Duel Surface'],
+  },
+    role: '브라우저 슈팅 게임',
+    summary: 'PixiJS 캔버스 게임 위에 React HUD와 오버레이를 얹었습니다.',
+    points: ['20 Stages', 'Canvas + Overlay', 'Game HUD'],
+  },
+} as const
+
+const projectCards = portfolioProjectServices.map((service) => ({
+  id: service.id,
+  title: service.name,
+  href: service.url,
+  repositoryHref: service.repositoryUrl,
+  metric: service.timelineLabel,
+  ...projectDetails[service.id],
+}))
+
+const capabilityDemos = [
+  {
+    id: 'motion',
+    label: '전환',
+    title: '선택 상태',
+    body: 'hover, focus, 선택 상태를 CSS 토큰으로 분리하고 reduced-motion에서는 전환을 줄였습니다.',
+    points: ['Hover', 'Focus', 'Reduced Motion'],
+  },
+  {
+    id: 'overlay',
+    label: '오버레이',
+    title: '게임 오버레이',
+    body: '캔버스는 게임에 맡기고, HUD와 모달은 DOM 표면으로 분리했습니다.',
+    points: ['HUD', 'Modal Surface'],
+  },
+  {
+    id: 'shared',
+    label: '공용 UI',
+    title: '공유 패키지',
+    body: 'theme, ui-shell, services를 공용 패키지로 두고 앱별 규칙은 각 앱에 남겼습니다.',
+    points: ['Theme Tokens', 'ui-shell', 'Service Registry'],
+  },
+] as const
 
 const stackGroups = [
   {
-    title: '프론트엔드',
-    items: ['React', 'TypeScript', 'Vite', 'Tailwind CSS'],
+    title: 'Frontend',
+    items: ['React', 'TypeScript', 'Vite', 'CSS'],
   },
   {
-    title: '게임 런타임',
-    items: ['PixiJS', 'Canvas 기반 UI', 'DOM 오버레이', '오디오/배경 리소스 분기'],
+    title: 'Game UI',
+    items: ['PixiJS', 'DOM Overlay', 'Keyboard Flow', 'Responsive Layout'],
   },
   {
-    title: '운영 구조',
-    items: ['Vercel 배포', 'Monorepo', '공용 문서/리소스 분리', 'GitHub 중심 관리'],
+    title: 'Repo/Deploy',
+    items: ['Shared Shell', 'Standalone App', 'Service Registry'],
   },
 ] as const
 
-const projectCards = [
-  {
-    label: '운영 중',
-    summary:
-      '동방영이전 모티브의 브라우저 게임. 20면 캠페인, 분기 구조, 보스 대사, 장면별 배경과 BGM을 갖춘 상태로 운영 중입니다.',
-    links: [
-      { label: 'GitHub', href: projectUrls.github },
-    ],
-  },
-  {
-    label: '이관 완료',
-    title: 'Nulsight',
-    summary:
-      '카드게임 프로젝트. 현재 모노레포 안에서 빌드와 배포가 가능하며, 공용 테마와 운영 규칙을 맞추면서 구조를 계속 다듬고 있습니다.',
-    links: [
-      { label: '플레이', href: projectUrls.nulsight },
-      { label: 'GitHub', href: projectUrls.github },
-    ],
-  },
-] as const
+type ProjectCard = (typeof projectCards)[number]
+type CapabilityDemo = (typeof capabilityDemos)[number]
 
 export function HomePage() {
+  const [activeProject, setActiveProject] = useState<ProjectCard>(projectCards[0])
+  const [activeDemo, setActiveDemo] = useState<CapabilityDemo>(capabilityDemos[0])
+
   return (
-    <main className="page">
-      <section className="masthead">
-        <div className="masthead__main">
-          <p className="kicker">Ketose Portfolio</p>
-          <h1>게임과 웹 프로젝트를 함께 관리합니다.</h1>
-          <p className="lead">
-            이 사이트는 프로젝트 소개와 배포 링크를 맡습니다. 실제 앱은 각각 독립적으로 배포하며,
+    <AppFrame as="main" innerClassName="page">
+      <section className="hero" id="top">
+        <div className="hero__copy">
+          <p className="kicker">작업 인덱스</p>
+          <h1>바로 열 수 있는 작업</h1>
+          <p className="lead lead--hero">
+            웹으로 배포한 작업을 개발 순서대로 정리했습니다.
           </p>
-          <div className="actions">
-            </a>
-            <a className="button button--ghost" href={projectUrls.nulsight}>
-              Nulsight 플레이
-            </a>
-            <a className="button button--ghost" href={projectUrls.github}>
-              GitHub 레포
-            </a>
+          <div className="hero-actions">
+            {projectCards.map((project, index) => (
+              <ButtonSurface
+                as="a"
+                className={`button${index === 0 ? '' : ' button--ghost'}`}
+                href={project.href}
+                key={project.id}
+                variant={index === 0 ? 'solid' : 'ghost'}
+              >
+                {project.title} 열기
+              </ButtonSurface>
+            ))}
+          </div>
+          <div className="hero-projects" aria-label="대표 작업">
+            {projectCards.map((project) => (
+              <a className={`hero-project hero-project--${project.id}`} href={project.href} key={project.id}>
+                <span className="hero-project__status">{project.metric}</span>
+                <strong>{project.title}</strong>
+                <span>{project.role}</span>
+                <p>{project.summary}</p>
+                <span className="hero-project__cta">열기</span>
+              </a>
+            ))}
           </div>
         </div>
-        <aside className="masthead__panel">
-          <dl className="facts">
-            <div>
-              <dt>사이트</dt>
-              <dd>
-                <a href={projectUrls.site}>{projectUrls.siteLabel}</a>
-              </dd>
-            </div>
-            <div>
-              <dd>
-              </dd>
-            </div>
-            <div>
-              <dt>Nulsight</dt>
-              <dd>
-                <a href={projectUrls.nulsight}>{projectUrls.nulsightLabel}</a>
-              </dd>
-            </div>
-            <div>
-              <dt>저장소</dt>
-              <dd>
-                <a href={projectUrls.github}>Ketose333/ketose-portfolio</a>
-              </dd>
-            </div>
+
+        <SectionPanel as="aside" className="access-panel" aria-label="포트폴리오 접근 링크">
+          <div className="access-panel__top">
+            <span>접근</span>
+            <a href={portfolioUrls.github}>GitHub</a>
+          </div>
+          <dl className="service-list">
+            {portfolioServiceList.map((service) => (
+              <div className="service-list__row" key={service.id}>
+                <dt>{service.name}</dt>
+                <dd>
+                  <a href={service.url}>{service.host}</a>
+                </dd>
+              </div>
+            ))}
           </dl>
-        </aside>
+        </SectionPanel>
       </section>
 
-      <section className="section">
-        <div className="section__header">
-          <p className="kicker">사용 기술</p>
-          <h2>현재 레포에서 실제로 쓰는 기술입니다.</h2>
+      <section className="section" id="projects">
+        <SectionIntro
+          className="section__header"
+          eyebrow="작업"
+          title="작업별 확인 지점"
+          titleAs="h2"
+          titleClassName="ui-title-ko"
+          eyebrowClassName="kicker"
+          descriptionClassName="ui-copy-ko"
+          description={<p className="lead">각 프로젝트에서 직접 확인할 화면과 레포를 먼저 둡니다.</p>}
+        />
+        <div className="project-lab">
+          <div className="project-tabs" aria-label="프로젝트 선택">
+            {projectCards.map((project) => (
+              <button
+                aria-pressed={activeProject.id === project.id}
+                className="project-tab"
+                key={project.id}
+                onClick={() => setActiveProject(project)}
+                type="button"
+              >
+                <span>{project.title}</span>
+                <strong>{project.role}</strong>
+              </button>
+            ))}
+          </div>
+
+          <SectionPanel as="article" className={`project-preview project-preview--${activeProject.id}`}>
+            <div className="project-preview__body">
+              <p className="project-preview__eyebrow">{activeProject.metric}</p>
+              <h3>{activeProject.title}</h3>
+              <p>{activeProject.summary}</p>
+              <ul className="chip-list">
+                {activeProject.points.map((point) => (
+                  <li key={point}>{point}</li>
+                ))}
+              </ul>
+              <ButtonSurface as="a" className="button button--ghost" href={activeProject.href} variant="ghost">
+                프로젝트 열기
+              </ButtonSurface>
+              {activeProject.repositoryHref ? (
+                <ButtonSurface as="a" className="button button--ghost" href={activeProject.repositoryHref} variant="ghost">
+                  레포 보기
+                </ButtonSurface>
+              ) : null}
+            </div>
+            <div className="project-preview__visual" aria-label={`${activeProject.title} 확인 항목`}>
+              {activeProject.points.map((point, index) => (
+                <span className="preview-row" key={point}>
+                  <span>{String(index + 1).padStart(2, '0')}</span>
+                  <strong>{point}</strong>
+                </span>
+              ))}
+            </div>
+          </SectionPanel>
         </div>
+      </section>
+
+      <section className="section" id="demo">
+        <SectionIntro
+          className="section__header"
+          eyebrow="구현"
+          title="웹에서 보여줄 수 있는 것"
+          titleAs="h2"
+          titleClassName="ui-title-ko"
+          eyebrowClassName="kicker"
+          descriptionClassName="ui-copy-ko"
+          description={<p className="lead">화면에서 확인 가능한 구현 단위만 남겼습니다.</p>}
+        />
+        <div className="demo-grid">
+          <div className="demo-tabs" aria-label="웹 기능 선택">
+            {capabilityDemos.map((demo) => (
+              <button
+                aria-pressed={activeDemo.id === demo.id}
+                className="demo-tab"
+                key={demo.id}
+                onClick={() => setActiveDemo(demo)}
+                type="button"
+              >
+                {demo.label}
+              </button>
+            ))}
+          </div>
+          <SectionPanel as="article" className={`demo-stage demo-stage--${activeDemo.id}`}>
+            <div className="demo-stage__copy">
+              <p className="demo-stage__label">{activeDemo.label}</p>
+              <h3>{activeDemo.title}</h3>
+              <p>{activeDemo.body}</p>
+              <ul className="chip-list">
+                {activeDemo.points.map((point) => (
+                  <li key={point}>{point}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="demo-stage__signal" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
+          </SectionPanel>
+        </div>
+      </section>
+
+      <section className="section section--system" id="system">
+        <SectionIntro
+          className="section__header"
+          eyebrow="구조"
+          title="공유 구조"
+          titleAs="h2"
+          titleClassName="ui-title-ko"
+          eyebrowClassName="kicker"
+          descriptionClassName="ui-copy-ko"
+          description={<p className="lead">공통 토큰과 셸은 상위에 두고, 게임 규칙과 화면 로직은 앱 안에 남겼습니다.</p>}
+        />
         <div className="stack-grid">
           {stackGroups.map((group) => (
-            <article className="panel" key={group.title}>
+            <article className="stack-group" key={group.title}>
               <h3>{group.title}</h3>
               <ul className="chip-list">
                 {group.items.map((item) => (
@@ -102,29 +254,6 @@ export function HomePage() {
           ))}
         </div>
       </section>
-
-      <section className="section">
-        <div className="section__header">
-          <p className="kicker">프로젝트</p>
-          <h2>현재 공개 중인 작업입니다.</h2>
-        </div>
-        <div className="project-grid">
-          {projectCards.map((card) => (
-            <article className="panel project-card" key={card.title}>
-              <p className="panel__label">{card.label}</p>
-              <h3>{card.title}</h3>
-              <p>{card.summary}</p>
-              <div className="actions actions--compact">
-                {card.links.map((link) => (
-                  <a className="button button--ghost" href={link.href} key={link.label}>
-                    {link.label}
-                  </a>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-    </main>
+    </AppFrame>
   )
 }

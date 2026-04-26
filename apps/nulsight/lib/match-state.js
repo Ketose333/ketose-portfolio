@@ -25,7 +25,8 @@ function toRoomStatePayload(room, opts = {}) {
     includeAgents = [],
     hideGame = false,
     agentNames = {},
-    restricted = false
+    restricted = false,
+    includeOwner = true,
   } = opts;
 
   const agents = Array.isArray(includeAgents) ? includeAgents : [];
@@ -36,7 +37,7 @@ function toRoomStatePayload(room, opts = {}) {
   return {
     ok: true,
     roomId: room?.roomId,
-    ownerId: room?.ownerId,
+    ownerId: includeOwner ? room?.ownerId : undefined,
     agents,
     agentsCount: actualAgents.length,
     started: live,

@@ -1,10 +1,26 @@
 import { build } from 'esbuild'
+import { execFileSync } from 'node:child_process'
 import { mkdir, copyFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
+function ensureSharedThemeBuilt() {
+  execFileSync(
+    process.execPath,
+    [
+      path.join(__dirname, '..', '..', 'scripts', 'build-theme-css.mjs'),
+      'themes/theme.oklch.css',
+      'themes/theme.css',
+    ],
+    {
+      cwd: path.join(__dirname, '..', '..'),
+      stdio: 'inherit',
+    },
+  )
+}
 
 const browserTargets = [
   {
@@ -16,16 +32,12 @@ const browserTargets = [
     outfile: 'public/js/deck-codec.js',
   },
   {
-    entry: 'src/client/game/session.ts',
-    outfile: 'public/js/game-session.js',
-  },
-  {
-    entry: 'src/client/game/format.ts',
-    outfile: 'public/js/game-format.js',
-  },
-  {
     entry: 'src/client/audio/runtime.ts',
     outfile: 'public/js/audio-runtime.js',
+  },
+  {
+    entry: 'src/client/game/runtime/gameRuntime.js',
+    outfile: 'public/js/game.js',
   },
 ]
 
@@ -96,6 +108,7 @@ async function syncSharedTheme() {
   )
 }
 
+ensureSharedThemeBuilt()
 await buildBrowser()
 await buildServer()
 await syncSharedCards()

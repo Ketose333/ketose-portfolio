@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import { ButtonSurface, NoticeSurface } from '@portfolio/ui-shell'
+import { NulsightPageFrame } from './NulsightPageFrame'
 
 type Action = {
   label: string
@@ -22,30 +24,33 @@ export function GatedPageNotice({
   secondaryAction,
 }: GatedPageNoticeProps) {
   return (
-    <main className="nulsight-shell nulsight-shell--narrow">
-      <section className="nulsight-panel">
-        <div className="nulsight-panel__head">
-          <p className="nulsight-kicker">{kicker}</p>
-          <h1 className="nulsight-section-title">{title}</h1>
-        </div>
-        <div className="nulsight-note-stack">
-          <p className="nulsight-status">{description}</p>
-        </div>
-        <div className="nulsight-actions nulsight-actions--compact">
-          <button
-            className={`nulsight-button${primaryAction.primary === false ? '' : ' nulsight-button--primary'}`}
-            type="button"
-            onClick={primaryAction.onClick}
-          >
-            {primaryAction.label}
-          </button>
-          {secondaryAction ? (
-            <button className="nulsight-button" type="button" onClick={secondaryAction.onClick}>
-              {secondaryAction.label}
-            </button>
-          ) : null}
-        </div>
-      </section>
-    </main>
+    <NulsightPageFrame className="nulsight-shell nulsight-shell--narrow" width="narrow">
+      <NoticeSurface
+        className="nulsight-panel"
+        introClassName="nulsight-panel__head"
+        bodyClassName="nulsight-note-stack"
+        actionsClassName="nulsight-actions nulsight-actions--compact"
+        eyebrow={<span className="nulsight-kicker">{kicker}</span>}
+        title={<span className="nulsight-section-title">{title}</span>}
+        body={<p className="nulsight-status">{description}</p>}
+        actions={
+          <>
+            <ButtonSurface
+              className={`nulsight-button${primaryAction.primary === false ? '' : ' nulsight-button--primary'}`}
+              type="button"
+              onClick={primaryAction.onClick}
+              variant={primaryAction.primary === false ? 'neutral' : 'solid'}
+            >
+              {primaryAction.label}
+            </ButtonSurface>
+            {secondaryAction ? (
+              <ButtonSurface className="nulsight-button" type="button" onClick={secondaryAction.onClick}>
+                {secondaryAction.label}
+              </ButtonSurface>
+            ) : null}
+          </>
+        }
+      />
+    </NulsightPageFrame>
   )
 }

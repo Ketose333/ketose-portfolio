@@ -1,7 +1,8 @@
 import type { PropsWithChildren } from 'react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { readJson } from '../api/client'
+import { getAccountDisplayName, logoutAccount, readAuthSession } from '@portfolio/account-client'
+import { ShellChrome } from '@portfolio/ui-shell'
 import type { AuthResponse } from '../types'
 
 const NAV_ITEMS = [
@@ -11,18 +12,29 @@ const NAV_ITEMS = [
   { label: '덱 허브', to: '/deck-hub' },
 ] as const
 
+const MOBILE_PRIMARY_NAV_ITEMS = [
+  { label: '대기실', to: '/lobby' },
+  { label: '덱 편집', to: '/deck' },
+] as const
+
+const MOBILE_MORE_NAV_ITEMS = [
+  { label: '가이드', to: '/guide' },
+  { label: '덱 허브', to: '/deck-hub' },
+] as const
+
 export function NulsightChrome({ children }: PropsWithChildren) {
   const location = useLocation()
   const navigate = useNavigate()
   const [authUser, setAuthUser] = useState<AuthResponse['user'] | null>(null)
   const isGameRoute = location.pathname === '/game'
+  const isAuthRoute = location.pathname === '/login' || location.pathname === '/register'
 
   useEffect(() => {
     let cancelled = false
 
     async function syncAuth() {
       try {
-        const response = await readJson<AuthResponse>('/api/auth?action=me')
+        const response = await readAuthSession()
         if (cancelled) {
           return
         }
@@ -42,11 +54,7 @@ export function NulsightChrome({ children }: PropsWithChildren) {
   }, [location.pathname])
 
   async function handleLogout() {
-    const response = await fetch('/api/auth?action=logout', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({}),
-    })
+    const response = await logoutAccount()
 
     if (!response.ok) {
       return
@@ -64,60 +72,75 @@ export function NulsightChrome({ children }: PropsWithChildren) {
     )
   }
 
+  function renderNavLink(entry: (typeof NAV_ITEMS)[number]) {
+    return (
+      <NavLink
+        key={entry.to}
+        to={entry.to}
+        className={({ isActive }) =>
+          `ui-shell-chrome__nav-link${isActive ? ' ui-shell-chrome__nav-link--active' : ''}`
+        }
+      >
+        {entry.label}
+      </NavLink>
+    )
+  }
+
   return (
-    <div className="nulsight-app-shell">
-      <header className="bp-header" role="banner">
-        <div className="bp-header__inner">
-          <Link className="bp-brand bp-logo" to="/lobby" aria-label="NULSIGHT 대기실로 이동">
-            NULSIGHT
-          </Link>
-          <nav className="bp-header__nav" aria-label="주요 메뉴">
-            {NAV_ITEMS.map((entry) => (
-              <NavLink
-                key={entry.to}
-                to={entry.to}
-                className={({ isActive }) =>
-                  `bp-nav-link${isActive ? ' bp-nav-link--active' : ''}`
-                }
-              >
-                {entry.label}
-              </NavLink>
-            ))}
-          </nav>
-          <div className="bp-header__actions" aria-label="계정">
+    <ShellChrome
+      shellClassName="nulsight-app-shell"
+      headerClassName="nulsight-chrome"
+      headerInnerClassName="nulsight-chrome__header"
+      contentClassName="nulsight-app-shell__content"
+      footerClassName="nulsight-chrome__footer"
+      footerInnerClassName="nulsight-chrome__footer-grid"
+      brand={
+        <Link className="ui-shell-chrome__brand nulsight-chrome__brand" to="/lobby" aria-label="NULSIGHT 대기실로 이동">
+          <strong className="ui-shell-chrome__title nulsight-chrome__wordmark">NULSIGHT</strong>
+        </Link>
+      }
+      context={null}
+      nav={isAuthRoute ? null : (
+        <>
+          <span className="nulsight-chrome__nav-full">{NAV_ITEMS.map(renderNavLink)}</span>
+          <span className="nulsight-chrome__nav-compact">
+            {MOBILE_PRIMARY_NAV_ITEMS.map(renderNavLink)}
+            <details className="nulsight-chrome__more">
+              <summary className="ui-shell-chrome__nav-link nulsight-chrome__more-summary">더보기</summary>
+              <div className="nulsight-chrome__more-menu">
+                {MOBILE_MORE_NAV_ITEMS.map(renderNavLink)}
+              </div>
+            </details>
+          </span>
+        </>
+      )}
+      actions={
+        isAuthRoute ? null : (
+          <>
             {authUser ? (
-              location.pathname === '/login' ? (
-                <Link className="bp-header-btn" to="/lobby">
-                  대기실로
-                </Link>
-              ) : (
-                <button className="bp-header-btn" type="button" onClick={() => void handleLogout()}>
-                  로그아웃
-                </button>
-              )
-            ) : (
+              <strong className="nulsight-chrome__user">{getAccountDisplayName(authUser)}</strong>
+            ) : null}
+            {authUser ? null : (
               <Link
-                className="bp-header-btn"
+                className="ui-shell-chrome__button ui-shell-chrome__button--solid"
                 to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`}
               >
                 로그인
               </Link>
             )}
-          </div>
-        </div>
-      </header>
-
-      <div className="nulsight-app-shell__content">{children}</div>
-
-      <footer className="bp-footer" role="contentinfo">
-        <div className="bp-footer__inner">
-          <span>NULSIGHT</span>
-          <span className="bp-footer__dot" aria-hidden="true">
-            •
-          </span>
-          <span>Alpha 1.0.0</span>
-        </div>
-      </footer>
-    </div>
+            {authUser ? (
+              <button className="ui-shell-chrome__button" type="button" onClick={() => void handleLogout()}>
+                로그아웃
+              </button>
+            ) : null}
+          </>
+        )
+      }
+      footer={
+        <p className="ui-shell-chrome__footer-copy">NULSIGHT TCG</p>
+      }
+    >
+      {children}
+    </ShellChrome>
   )
 }

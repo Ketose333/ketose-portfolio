@@ -1,7 +1,10 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { postJson, readJson } from '../app/api/client'
-import type { AuthResponse } from '../app/types'
+import { loginAccount, readAuthSession } from '@portfolio/account-client'
+import { mapAuthError } from '../app/api/errors'
+import { ButtonSurface, FieldGroup } from '@portfolio/ui-shell'
+import { NulsightPageFrame } from '../app/components/NulsightPageFrame'
+import { NulsightPanel } from '../app/components/NulsightPanel'
 
 function getNextPath(search: string) {
   const next = new URLSearchParams(search).get('next')?.trim()
@@ -20,7 +23,7 @@ export function LoginPage() {
   useEffect(() => {
     let cancelled = false
 
-    void readJson<AuthResponse>('/api/auth?action=me')
+    void readAuthSession()
       .then((response) => {
         if (!cancelled && response.ok) {
           navigate(nextPath, { replace: true })
@@ -44,13 +47,13 @@ export function LoginPage() {
     setSubmitting(true)
     setStatus('')
     try {
-      const response = await postJson<AuthResponse>('/api/auth?action=login', {
+      const response = await loginAccount({
         username: username.trim(),
         password,
       })
 
       if (!response.ok) {
-        setStatus(`로그인 실패: ${response.error || 'error'}`)
+        setStatus(`로그인 실패: ${mapAuthError(response.error || '')}`)
         return
       }
 
@@ -63,49 +66,57 @@ export function LoginPage() {
   }
 
   return (
-    <main className="nulsight-shell nulsight-shell--narrow">
-      <section className="nulsight-panel">
-        <div className="nulsight-panel__head">
-          <p className="nulsight-kicker">LOGIN</p>
-          <h1 className="nulsight-section-title">로그인</h1>
+    <NulsightPageFrame className="nulsight-shell nulsight-shell--narrow" width="narrow" centered>
+      <NulsightPanel
+        className="nulsight-panel--hero nulsight-auth-panel"
+        eyebrow="로그인"
+        titleAs="h1"
+        title="세션 로그인"
+        description={
+          <p className="nulsight-copy nulsight-copy--tight">
+            로그인하면 대기실이나 요청한 화면으로 이동합니다.
+          </p>
+        }
+      >
+        <div className="nulsight-auth-layout">
+          <form className="nulsight-form nulsight-auth-form" onSubmit={handleSubmit}>
+            <FieldGroup className="nulsight-label" label="아이디">
+              <input
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                placeholder="아이디를 입력해 주세요"
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
+              />
+            </FieldGroup>
+
+            <FieldGroup className="nulsight-label" label="비밀번호">
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="비밀번호를 입력해 주세요"
+                autoComplete="current-password"
+              />
+            </FieldGroup>
+
+            <div className="nulsight-actions nulsight-actions--form">
+              <ButtonSurface className="nulsight-button nulsight-button--primary" type="submit" variant="solid" disabled={submitting}>
+                {submitting ? '로그인 중' : '로그인'}
+              </ButtonSurface>
+              <ButtonSurface as={Link} className="nulsight-button" to={`/register${location.search}`}>
+                회원가입
+              </ButtonSurface>
+            </div>
+
+            <div className="nulsight-note-stack nulsight-note-stack--panel">
+              <p className="nulsight-note">한 계정으로 로비, 덱, 듀얼 로그를 함께 사용합니다.</p>
+              <p className="nulsight-status">{status || '로그인 대기 중'}</p>
+            </div>
+          </form>
         </div>
-
-        <form className="nulsight-form" onSubmit={handleSubmit}>
-          <label className="nulsight-label">
-            <span>아이디</span>
-            <input
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder="아이디를 입력해 주세요"
-              autoComplete="username"
-              autoCapitalize="none"
-              spellCheck={false}
-            />
-          </label>
-
-          <label className="nulsight-label">
-            <span>비밀번호</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="비밀번호를 입력해 주세요"
-              autoComplete="current-password"
-            />
-          </label>
-
-          <button className="nulsight-button nulsight-button--primary" type="submit" disabled={submitting}>
-            {submitting ? '로그인 중' : '로그인'}
-          </button>
-        </form>
-
-        <div className="nulsight-note-stack">
-          {status ? <p className="nulsight-status">{status}</p> : null}
-          <Link className="nulsight-inline-link" to={`/register${location.search}`}>
-            회원가입으로 이동
-          </Link>
-        </div>
-      </section>
-    </main>
+      </NulsightPanel>
+    </NulsightPageFrame>
   )
 }

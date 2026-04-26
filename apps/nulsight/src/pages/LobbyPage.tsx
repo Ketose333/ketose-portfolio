@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { getAccountDisplayName, readAuthSession } from '@portfolio/account-client'
+import { ButtonSurface, PanelSurface } from '@portfolio/ui-shell'
 import { postJson, readJson } from '../app/api/client'
+import { mapRoomError } from '../app/api/errors'
+import { NulsightPageFrame } from '../app/components/NulsightPageFrame'
+import { NulsightPanel } from '../app/components/NulsightPanel'
+import { loadSavedAgent, loadSavedRoom, saveAgent, saveRoom } from '../client/game/persistence'
 import { buildGameUrl, sanitizeRoomId } from '../client/game/room'
-import { AGENT_KEY, ROOM_KEY, loadSavedAgent, loadSavedRoom, saveAgent, saveRoom } from '../client/game/session'
 import { readClipboardTextSafe, writeClipboardTextSafe } from '../client/ui/clipboard'
 import type { AuthResponse, RoomStateResponse } from '../app/types'
 
@@ -22,14 +27,13 @@ export function LobbyPage() {
   const roomAgents = roomState?.agents ?? []
   const agentsCount = roomState?.agentsCount ?? roomAgents.length
   const roomStarted = typeof roomState?.started === 'boolean' ? roomState.started : Boolean(roomState?.game)
-  const roomJoinable = typeof roomState?.joinable === 'boolean' ? roomState.joinable : agentsCount < 2
 
   useEffect(() => {
     let cancelled = false
 
     async function bootstrap() {
       try {
-        const auth = await readJson<AuthResponse>('/api/auth?action=me')
+        const auth = await readAuthSession()
         if (!auth.ok || !auth.user) {
           if (!cancelled) {
             setAuthUser(null)
@@ -44,7 +48,7 @@ export function LobbyPage() {
 
         setAuthUser(auth.user)
         saveAgent(auth.user.username)
-        setStatus(`로그인: ${auth.user.displayName || auth.user.username}`)
+        setStatus(`로그인: ${getAccountDisplayName(auth.user)}`)
       } catch {
         if (!cancelled) {
           setAuthUser(null)
@@ -101,12 +105,10 @@ export function LobbyPage() {
             navigate(buildGameUrl(roomId, authUser.username))
           }
         } else {
-          setStatus(response.error || '방을 찾을 수 없습니다.')
+          setStatus(mapRoomError(response.error || ''))
         }
       } catch {
-        if (!cancelled) {
-          setStatus('방 상태를 불러오지 못했습니다.')
-        }
+        if (!cancelled) setStatus('방 상태를 불러오지 못했습니다.')
       } finally {
         if (!cancelled && !silent) {
           setBusy(null)
@@ -137,7 +139,7 @@ export function LobbyPage() {
       })
 
       if (!response.ok || !response.roomId) {
-        setStatus(response.error || '방 생성에 실패했습니다.')
+        setStatus(mapRoomError(response.error || ''))
         return
       }
 
@@ -163,7 +165,7 @@ export function LobbyPage() {
         `/api/rooms?action=state&roomId=${encodeURIComponent(roomId)}`,
       )
       setRoomState(response)
-      setStatus(response.ok ? '방 상태 확인됨' : response.error || '방을 찾을 수 없습니다.')
+      setStatus(response.ok ? '방 상태 확인됨' : mapRoomError(response.error || ''))
     } catch {
       setStatus('방 상태를 불러오지 못했습니다.')
     } finally {
@@ -185,7 +187,7 @@ export function LobbyPage() {
       })
 
       if (!response.ok) {
-        setStatus(response.error || '입장에 실패했습니다.')
+        setStatus(mapRoomError(response.error || ''))
         return
       }
 
@@ -231,44 +233,51 @@ export function LobbyPage() {
 
   const ambientRows = useMemo(
     () => [
-      { label: '내 상태', value: authUser ? authUser.displayName || authUser.username : '-' },
-      { label: '방 상태', value: roomStarted ? '진행 중' : roomState?.ok ? '대기 중' : '-' },
       { label: '참가 인원', value: `${agentsCount}/2` },
-      { label: '입장 가능', value: roomJoinable ? '가능' : '가득참' },
+      { label: '매치', value: roomStarted ? '진행 중' : roomState?.ok ? '대기 중' : '-' },
     ],
-    [agentsCount, authUser, roomJoinable, roomStarted, roomState?.ok],
+    [agentsCount, roomStarted, roomState?.ok],
   )
-
   return (
-    <main className="nulsight-shell">
+    <NulsightPageFrame className="nulsight-shell nulsight-shell--lobby">
       <section className="nulsight-page-grid">
         <div className="nulsight-page-main">
-          <section className="nulsight-panel">
-            <div className="nulsight-panel__head">
-              <p className="nulsight-kicker">LOBBY</p>
-              <h1 className="nulsight-section-title">빠른 시작</h1>
+          <NulsightPanel
+            className="nulsight-panel--hero"
+            eyebrow="대기실"
+            titleAs="h1"
+            title="대기실"
+            description={
+              <p className="nulsight-copy nulsight-copy--tight">
+                방을 열거나 코드를 입력하면 두 플레이어가 모이는 즉시 듀얼로 연결됩니다.
+              </p>
+            }
+          >
+            <div className="nulsight-band-list" aria-label="현재 상태 요약">
+              {ambientRows.map((entry) => (
+                <article key={entry.label} className="nulsight-band">
+                  <span className="nulsight-band__label">{entry.label}</span>
+                  <strong className="nulsight-band__value">{entry.value}</strong>
+                </article>
+              ))}
             </div>
 
             <div className="nulsight-lobby-grid">
-              <article className="nulsight-card nulsight-card--stack">
-                <h2>계정</h2>
-                <input value={authUser?.username || ''} placeholder="로그인 필요" readOnly />
-              </article>
-
-              <article className="nulsight-card nulsight-card--stack">
-                <h2>방 만들기</h2>
-                <button
+              <PanelSurface as="article" className="nulsight-card nulsight-card--stack">
+                <h2>새 방</h2>
+                <ButtonSurface
                   className="nulsight-button nulsight-button--primary"
                   type="button"
                   onClick={createRoom}
+                  variant="solid"
                   disabled={loading || busy !== null || !authUser}
                 >
                   {busy === 'create' ? '생성 중' : '방 만들기'}
-                </button>
-              </article>
+                </ButtonSurface>
+              </PanelSurface>
 
-              <article className="nulsight-card nulsight-card--stack nulsight-card--wide">
-                <h2>방 코드로 합류</h2>
+              <PanelSurface as="article" className="nulsight-card nulsight-card--stack nulsight-card--wide">
+                <h2>코드로 합류</h2>
                 <div className="nulsight-inline-form">
                   <input
                     value={roomId}
@@ -285,71 +294,82 @@ export function LobbyPage() {
                     spellCheck={false}
                     maxLength={6}
                   />
-                  <button className="nulsight-button" type="button" onClick={checkRoom} disabled={!roomId || busy !== null}>
+                  <ButtonSurface className="nulsight-button" type="button" onClick={checkRoom} disabled={!roomId || busy !== null}>
                     {busy === 'check' ? '확인 중' : '방 상태'}
-                  </button>
-                  <button className="nulsight-button" type="button" onClick={() => void pasteRoomCode()} disabled={busy !== null}>
+                  </ButtonSurface>
+                  <ButtonSurface className="nulsight-button" type="button" onClick={() => void pasteRoomCode()} disabled={busy !== null}>
                     코드 붙여넣기
-                  </button>
-                  <button
+                  </ButtonSurface>
+                  <ButtonSurface
                     className="nulsight-button"
                     type="button"
                     onClick={joinRoom}
                     disabled={!roomId || busy !== null || !authUser}
                   >
                     {busy === 'join' ? '입장 중' : '입장'}
-                  </button>
+                  </ButtonSurface>
                 </div>
-              </article>
+              </PanelSurface>
             </div>
 
-            <div className="nulsight-actions nulsight-actions--compact">
-              {!authUser ? (
-                <>
-                  <Link
-                    className="nulsight-button nulsight-button--primary"
-                    to={`/login?next=${encodeURIComponent('/lobby')}`}
-                  >
-                    로그인
-                  </Link>
-                  <Link className="nulsight-button" to="/register">
-                    회원가입
-                  </Link>
-                </>
-              ) : null}
-              <Link className="nulsight-button" to="/deck">
-                덱빌딩
-              </Link>
-              <Link className="nulsight-button" to="/guide">
-                가이드
-              </Link>
+            <div className="nulsight-ops-footer">
+              <p className="nulsight-status nulsight-status--strong">{status}</p>
+              <div className="nulsight-actions nulsight-actions--compact">
+                {!authUser ? (
+                  <>
+                    <ButtonSurface
+                      as={Link}
+                      className="nulsight-button nulsight-button--primary"
+                      to={`/login?next=${encodeURIComponent('/lobby')}`}
+                      variant="solid"
+                    >
+                      로그인
+                    </ButtonSurface>
+                    <ButtonSurface as={Link} className="nulsight-button" to="/register">
+                      회원가입
+                    </ButtonSurface>
+                  </>
+                ) : null}
+                <ButtonSurface as={Link} className="nulsight-button" to="/deck">
+                  덱빌딩
+                </ButtonSurface>
+                <ButtonSurface as={Link} className="nulsight-button" to="/guide">
+                  가이드
+                </ButtonSurface>
+              </div>
             </div>
-
-            <div className="nulsight-note-stack">
-              <p className="nulsight-status">{status}</p>
-            </div>
-          </section>
+          </NulsightPanel>
         </div>
 
         <aside className="nulsight-page-side">
-          <section className="nulsight-panel">
-            <div className="nulsight-panel__head">
-              <p className="nulsight-kicker">ROOM</p>
-              <h2 className="nulsight-section-title">방 상태</h2>
-            </div>
+          <NulsightPanel
+            eyebrow="방 상태"
+            title="현재 방"
+            titleAs="h2"
+          >
             <div className="nulsight-room-code">
               <div className="nulsight-room-code__label">현재 방 코드</div>
               <div className="nulsight-room-code__row">
                 <div className="nulsight-code-box">{roomCode}</div>
-                <button
+                <ButtonSurface
                   className="nulsight-button nulsight-room-code__copy"
                   type="button"
                   onClick={() => void copyRoomCode()}
                   disabled={!roomState?.roomId}
                 >
                   코드 복사
-                </button>
+                </ButtonSurface>
               </div>
+            </div>
+            <div className="nulsight-agent-strip" aria-label="참가자">
+              {(roomAgents.length ? roomAgents : ['빈 자리', '빈 자리']).map((agent, index) => (
+                <span
+                  key={`${agent}-${index}`}
+                  className={`nulsight-agent-chip${roomAgents[index] ? '' : ' nulsight-agent-chip--empty'}`}
+                >
+                  {roomAgents[index] || agent}
+                </span>
+              ))}
             </div>
             <dl className="nulsight-kv-list">
               <div>
@@ -365,24 +385,9 @@ export function LobbyPage() {
                 <dd>{roomStarted ? '진행 중' : '대기 중'}</dd>
               </div>
             </dl>
-          </section>
-
-          <section className="nulsight-panel">
-            <div className="nulsight-panel__head">
-              <p className="nulsight-kicker">LIVE</p>
-              <h2 className="nulsight-section-title">실시간 상태</h2>
-            </div>
-            <div className="nulsight-mini-grid">
-              {ambientRows.map((entry) => (
-                <article key={entry.label} className="nulsight-mini-card">
-                  <h3>{entry.label}</h3>
-                  <p>{entry.value}</p>
-                </article>
-              ))}
-            </div>
-          </section>
+          </NulsightPanel>
         </aside>
       </section>
-    </main>
+    </NulsightPageFrame>
   )
 }

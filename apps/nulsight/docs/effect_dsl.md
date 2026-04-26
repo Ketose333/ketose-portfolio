@@ -34,7 +34,7 @@
 - `on_attack_hit` : 공격 적중 시
 - `on_turn_start` : 내 턴 시작
 - `on_turn_end` : 내 턴 종료
-- `active` : 에이전트가 직접 기동
+- `active` : 플레이어가 직접 기동
 
 ---
 
@@ -55,7 +55,7 @@
 
 ## 4) action 집합 (v0.1)
 
-- `deal_damage_to_agent` : 에이전트에게 피해
+- `deal_damage_to_agent` : 본체에 피해
 - `deal_damage_to_unit` : 유닛에게 피해
 - `heal_unit` : 유닛 회복
 - `draw` : 드로우

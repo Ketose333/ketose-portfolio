@@ -7,7 +7,7 @@ const allowed = new Set([
   resolve(root, 'themes/theme.oklch.css'),
   resolve(root, 'apps/nulsight/public/theme.css'),
 ])
-const ignored = new Set(['node_modules', 'dist', '.git'])
+const ignored = new Set(['node_modules', 'dist', 'dist-check', '.git'])
 
 function walk(dir) {
   const entries = readdirSync(dir, { withFileTypes: true })

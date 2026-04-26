@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import '../../../themes/fonts.css'
 import '../../../themes/theme.css'
+import '@portfolio/ui-shell/styles.css'
 import './styles.css'
 import App from './App'
 

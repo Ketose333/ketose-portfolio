@@ -1,7 +1,10 @@
 import { FormEvent, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { postJson } from '../app/api/client'
-import type { AuthResponse } from '../app/types'
+import { registerAccount } from '@portfolio/account-client'
+import { mapAuthError } from '../app/api/errors'
+import { ButtonSurface, FieldGroup } from '@portfolio/ui-shell'
+import { NulsightPageFrame } from '../app/components/NulsightPageFrame'
+import { NulsightPanel } from '../app/components/NulsightPanel'
 
 function getNextPath(search: string) {
   const next = new URLSearchParams(search).get('next')?.trim()
@@ -29,14 +32,14 @@ export function RegisterPage() {
     setSubmitting(true)
     setStatus('')
     try {
-      const response = await postJson<AuthResponse>('/api/auth?action=register', {
+      const response = await registerAccount({
         username: username.trim(),
         displayName: displayName.trim(),
         password,
       })
 
       if (!response.ok) {
-        setStatus(`회원가입 실패: ${response.error || 'error'}`)
+        setStatus(`회원가입 실패: ${mapAuthError(response.error || '')}`)
         return
       }
 
@@ -49,62 +52,69 @@ export function RegisterPage() {
   }
 
   return (
-    <main className="nulsight-shell nulsight-shell--narrow">
-      <section className="nulsight-panel">
-        <div className="nulsight-panel__head">
-          <p className="nulsight-kicker">REGISTER</p>
-          <h1 className="nulsight-section-title">회원가입</h1>
-        </div>
-
-        <form className="nulsight-form" onSubmit={handleSubmit}>
-          <label className="nulsight-label">
-            <span>아이디</span>
-            <input
-              className="w100"
-              placeholder="아이디 (영문/숫자/_ · 3~24자)"
-              autoComplete="username"
-              autoCapitalize="none"
-              spellCheck={false}
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-            />
-          </label>
-
-          <label className="nulsight-label">
-            <span>표시 이름</span>
-            <input
-              className="w100"
-              placeholder="표시 이름 (선택)"
-              autoComplete="nickname"
-              value={displayName}
-              onChange={(event) => setDisplayName(event.target.value)}
-            />
-          </label>
-
-          <label className="nulsight-label">
-            <span>비밀번호</span>
-            <input
-              type="password"
-              className="w100"
-              placeholder="비밀번호 (영문+숫자 · 8자 이상)"
-              autoComplete="new-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-          </label>
-
-          <button type="submit" className="nulsight-button nulsight-button--primary" disabled={submitting}>
-            {submitting ? '가입 중' : '회원가입'}
-          </button>
-        </form>
-
-        <div className="nulsight-note-stack">
-          {status ? <p className="nulsight-status">{status}</p> : null}
-          <p className="nulsight-note">
-            이미 계정이 있으면 <Link to={`/login${location.search}`}>로그인</Link>해 주세요.
+    <NulsightPageFrame className="nulsight-shell nulsight-shell--narrow" width="narrow" centered>
+      <NulsightPanel
+        className="nulsight-panel--hero nulsight-auth-panel"
+        eyebrow="가입"
+        titleAs="h1"
+        title="플레이어 등록"
+        description={
+          <p className="nulsight-copy nulsight-copy--tight">
+            같은 계정으로 방 입장, 덱 저장, 듀얼 기록을 사용합니다.
           </p>
+        }
+      >
+        <div className="nulsight-auth-layout">
+          <form className="nulsight-form nulsight-auth-form" onSubmit={handleSubmit}>
+            <FieldGroup className="nulsight-label" label="아이디">
+              <input
+                className="w100"
+                placeholder="아이디 (영문/숫자/_ · 3~24자)"
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+              />
+            </FieldGroup>
+
+            <FieldGroup className="nulsight-label" label="표시 이름">
+              <input
+                className="w100"
+                placeholder="표시 이름 (선택)"
+                autoComplete="nickname"
+                value={displayName}
+                onChange={(event) => setDisplayName(event.target.value)}
+              />
+            </FieldGroup>
+
+            <FieldGroup className="nulsight-label" label="비밀번호">
+              <input
+                type="password"
+                className="w100"
+                placeholder="비밀번호 (영문+숫자 · 8자 이상)"
+                autoComplete="new-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </FieldGroup>
+
+            <div className="nulsight-actions nulsight-actions--form">
+              <ButtonSurface type="submit" className="nulsight-button nulsight-button--primary" variant="solid" disabled={submitting}>
+                {submitting ? '가입 중' : '회원가입'}
+              </ButtonSurface>
+              <ButtonSurface as={Link} className="nulsight-button" to={`/login${location.search}`}>
+                로그인
+              </ButtonSurface>
+            </div>
+
+            <div className="nulsight-note-stack nulsight-note-stack--panel">
+              <p className="nulsight-note">표시 이름은 선택 사항이며 비워 두면 아이디를 그대로 사용합니다.</p>
+              <p className="nulsight-status">{status || '가입 대기 중'}</p>
+            </div>
+          </form>
         </div>
-      </section>
-    </main>
+      </NulsightPanel>
+    </NulsightPageFrame>
   )
 }

@@ -3,7 +3,7 @@ import { join, relative, resolve } from 'node:path'
 
 const root = resolve(process.cwd())
 const targetRoot = resolve(root, 'apps/nulsight')
-const ignored = new Set(['node_modules', 'dist', '.git'])
+const ignored = new Set(['node_modules', 'dist', 'dist-check', '.git'])
 
 const allowedFiles = new Set([
   resolve(targetRoot, 'public/styles.css'),
@@ -11,6 +11,7 @@ const allowedFiles = new Set([
   resolve(targetRoot, 'public/index.css'),
   resolve(targetRoot, 'public/theme.css'),
   resolve(targetRoot, 'src/app.css'),
+  resolve(targetRoot, 'src/styles/core.css'),
 ])
 
 const forbiddenPatterns = [
@@ -54,7 +55,7 @@ for (const file of walk(targetRoot)) {
 
 if (offenders.length > 0) {
   console.error('Nulsight page-level CSS is overriding core style primitives.')
-  console.error('Move shape/typography/focus primitives into public/styles.css, public/header-footer.css, src/app.css, or public/index.css.')
+  console.error('Move shape/typography/focus primitives into src/styles/core.css, src/app.css, or shared theme files.')
   offenders.forEach((entry) => console.error(`- ${entry}`))
   process.exit(1)
 }

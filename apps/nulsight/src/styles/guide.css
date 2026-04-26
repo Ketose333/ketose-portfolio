@@ -1,0 +1,111 @@
+/* guide.css */
+
+.nulsight-shell--reading {
+  max-width: 1120px;
+}
+
+.nulsight-page-main {
+  display: grid;
+  gap: 10px;
+}
+
+.nulsight-band-list--guide {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.nulsight-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.guide-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--theme-shell-border);
+  background: var(--theme-panel);
+  padding: 14px;
+}
+
+.guide-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: var(--theme-border-strong);
+}
+
+.guide-card__title {
+  margin-bottom: 10px;
+  color: var(--theme-text);
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.35;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  line-break: strict;
+}
+
+.guide-bullets {
+  display: grid;
+  gap: 7px;
+}
+
+.guide-bullets--catalog {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px 10px;
+}
+
+.bullet {
+  display: grid;
+  grid-template-columns: 7px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.bullet-dot {
+  width: 7px;
+  height: 7px;
+  margin-top: 8px;
+  border: 1px solid var(--theme-border-strong);
+  background: var(--theme-text);
+}
+
+.guide-card .muted {
+  color: var(--theme-muted);
+  font-size: var(--fs-min-readable);
+  line-height: 1.55;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-break: strict;
+  text-wrap: pretty;
+}
+
+.code-token {
+  display: inline-block;
+  padding: 2px 7px;
+  border: 1px solid var(--theme-border);
+  background: var(--theme-bg-elevated);
+  color: var(--theme-text);
+  font-size: var(--fs-min-readable);
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+@media (max-width: 980px) {
+  .nulsight-band-list--guide,
+  .guide-bullets--catalog {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .nulsight-guide-grid,
+  .nulsight-band-list--guide,
+  .guide-bullets--catalog {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { readAuthSession } from '@portfolio/account-client'
+import { ButtonSurface } from '@portfolio/ui-shell'
+import { mapDeckHubError } from '../app/api/errors'
 import { postJson, readJson } from '../app/api/client'
 import { ActionDialog } from '../app/components/ActionDialog'
 import { readClipboardTextSafe, writeClipboardTextSafe } from '../client/ui/clipboard'
 import { GatedPageNotice } from '../app/components/GatedPageNotice'
+import { NulsightPanel } from '../app/components/NulsightPanel'
 import { getDeckCodecGlobal, getSharedCardsGlobal, normalizeCardKey, type CardDef } from '../app/globals'
 import type { AuthResponse } from '../app/types'
 
@@ -96,26 +100,15 @@ function renderHubCardPreview(item: ReturnType<typeof summarizeDeck>, defs: Reco
     const def = defs[row.key]
     const type = def?.type === 'monster' ? '유닛' : '마법'
     const meta = [def?.theme, def?.element].filter(Boolean).join(' · ')
-    const footer = def?.type === 'monster' ? `${def?.atk ?? '-'} / ${def?.hp ?? '-'}` : (def?.spellKind || 'spell').toUpperCase()
 
     return (
       <div className="hub-card-preview" key={row.key}>
-        <div className={`bp-card ${def?.type === 'monster' ? 'bp-card--unit' : 'bp-card--spell'}`}>
-          <div className="bp-card__chrome" />
-          <div className="bp-card__head">
-            <span className="bp-card__cost">{def?.cost ?? '-'}</span>
-            <span className="bp-card__type">{type}</span>
-          </div>
-          <div className="bp-card__body">
-            <div className="bp-card__name">{def?.name || row.key}</div>
-            <div className={`bp-card__meta${meta ? '' : ' bp-card__meta--empty'}`}>{meta || '분류 없음'}</div>
-            <div className="bp-card__text">{row.qty}장 채용</div>
-          </div>
-          <div className="bp-card__foot">
-            <span className="bp-card__footer">{footer}</span>
-            <span className="bp-card__footer">x{row.qty}</span>
-          </div>
-        </div>
+        <span className="hub-card-preview__cost">{def?.cost ?? '-'}</span>
+        <span className="hub-card-preview__body">
+          <strong>{def?.name || row.key}</strong>
+          <small>{[type, meta].filter(Boolean).join(' · ')}</small>
+        </span>
+        <b>x{row.qty}</b>
       </div>
     )
   })
@@ -140,6 +133,7 @@ export function DeckHubPage() {
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeckHubItem | null>(null)
+  const [uploadOpen, setUploadOpen] = useState(false)
 
   const hasMore = offset < total
 
@@ -148,7 +142,7 @@ export function DeckHubPage() {
 
     async function bootstrap() {
       try {
-        const auth = await readJson<AuthResponse>('/api/auth?action=me')
+        const auth = await readAuthSession()
         if (!auth.ok || !auth.user) {
           if (!cancelled) {
             setAuthRequired(true)
@@ -185,7 +179,7 @@ export function DeckHubPage() {
         `/api/deck-hub?q=${encodeURIComponent(query.trim())}&sort=${encodeURIComponent(sort)}&limit=${PAGE_SIZE}&offset=${nextOffset}`,
       )
       if (!response.ok) {
-        setStatus(response.error || '허브 목록을 불러오지 못했습니다.')
+        setStatus(mapDeckHubError(response.error || ''))
         return
       }
 
@@ -213,7 +207,7 @@ export function DeckHubPage() {
       })
 
       if (!response.ok) {
-        setStatus(`업로드 실패: ${response.error || 'error'}`)
+        setStatus(`업로드 실패: ${mapDeckHubError(response.error || '')}`)
         return
       }
 
@@ -233,7 +227,7 @@ export function DeckHubPage() {
     try {
       const detail = await readJson<DeckHubDetailResponse>(`/api/deck-hub?action=detail&id=${encodeURIComponent(id)}`)
       if (!detail.ok || !detail.post) {
-        setStatus('덱 정보를 불러오지 못했습니다.')
+        setStatus(mapDeckHubError(detail.error || ''))
         return
       }
       await postJson<{ ok: boolean; error?: string }>('/api/deck-hub?action=import', { id })
@@ -248,7 +242,7 @@ export function DeckHubPage() {
     try {
       const response = await postJson<{ ok: boolean; error?: string }>('/api/deck-hub?action=delete', { id })
       if (!response.ok) {
-        setStatus('삭제에 실패했습니다.')
+        setStatus(mapDeckHubError(response.error || ''))
         return
       }
       setStatus('허브에서 삭제했습니다.')
@@ -278,10 +272,16 @@ export function DeckHubPage() {
     [defs, items, me],
   )
 
+  useEffect(() => {
+    if (!booting && !cards.length) {
+      setUploadOpen(true)
+    }
+  }, [booting, cards.length])
+
   if (!booting && authRequired && !me) {
     return (
       <GatedPageNotice
-        kicker="DECK HUB"
+        kicker="덱 허브"
         title="덱 허브는 로그인 뒤에 사용할 수 있습니다."
         description="공개 덱 검색, 가져오기, 업로드는 로그인한 상태에서만 가능합니다."
         primaryAction={{ label: '로그인', onClick: () => navigate('/login?next=%2Fdeck-hub') }}
@@ -292,11 +292,15 @@ export function DeckHubPage() {
 
   return (
     <main className="nulsight-shell">
-      <section className="nulsight-panel nulsight-panel--compact hub-toolbar" aria-label="덱 허브 검색">
-        <div>
-          <p className="nulsight-kicker">DECK HUB</p>
-          <h1 className="nulsight-section-title">공개 덱 둘러보기</h1>
-        </div>
+      <NulsightPanel
+        ariaLabel="덱 허브 검색"
+        className="hub-toolbar"
+        compact
+        eyebrow="덱 허브"
+        title="공개 덱"
+        titleAs="h1"
+        description={<p className="nulsight-copy nulsight-copy--tight">검색한 덱을 현재 슬롯으로 가져옵니다.</p>}
+      >
         <div className="hub-toolbar__row">
           <input
             value={query}
@@ -314,154 +318,188 @@ export function DeckHubPage() {
             <option value="latest">최신순</option>
             <option value="imports">가져오기순</option>
           </select>
-          <button className="ghost nulsight-button" type="button" onClick={() => void refresh(true)} disabled={busy !== null}>
+          <ButtonSurface className="ghost nulsight-button" type="button" onClick={() => void refresh(true)} disabled={busy !== null}>
             검색
-          </button>
+          </ButtonSurface>
         </div>
-        <div className="muted" role="status" aria-live="polite">
+        <div className="muted hub-status-line" role="status" aria-live="polite">
           {status}
         </div>
-      </section>
+      </NulsightPanel>
 
       <section className="hub-list">
-        {cards.map((item) => (
-          <article className="hub-card nulsight-panel nulsight-panel--compact" key={item.id}>
-            <div className="hub-card__top">
-              <div>
-                <h3>{item.title}</h3>
+        {cards.length ? (
+          cards.map((item) => (
+            <article className="hub-card nulsight-panel nulsight-panel--compact" key={item.id}>
+              <div className="hub-card__top">
+                <div>
+                  <h3>{item.title}</h3>
+                  <div className="hub-meta">
+                    <span>@{item.author}</span>
+                    {item.tags.length ? <span>{item.tags.join(', ')}</span> : null}
+                    <span>{item.cardsCount}장</span>
+                  </div>
+                </div>
                 <div className="hub-meta">
-                  <span>@{item.author}</span>
-                  <span>{item.tags.join(', ')}</span>
-                  <span>{item.cardsCount}장</span>
+                  <span>⬇ {item.imports || 0}</span>
                 </div>
               </div>
-              <div className="hub-meta">
-                <span>⬇ {item.imports || 0}</span>
-              </div>
-            </div>
 
-            <p className="muted">{item.description || '설명 없음'}</p>
+              <p className="muted">{item.description || '설명 없음'}</p>
 
-            <div className="hub-card__body">
-              <div className="hub-decklist">
-                <div className="hub-decklist__head">
-                  <span>덱 리스트</span>
-                  <span className="muted">
-                    {item.summary?.total || 0}장 · {item.summary?.kinds || 0}종
-                  </span>
+              <div className="hub-card__body">
+                <div className="hub-decklist">
+                  <div className="hub-decklist__head">
+                    <span>덱 리스트</span>
+                    <span className="muted">
+                      {item.summary?.total || 0}장 · {item.summary?.kinds || 0}종
+                    </span>
+                  </div>
+                  <ul className="hub-decklist__list">
+                    {(item.summary?.rows || []).slice(0, 10).map((row) => (
+                      <li key={row.key}>
+                        <span>{row.name}</span>
+                        <b>x{row.qty}</b>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="hub-decklist__list">
-                  {(item.summary?.rows || []).slice(0, 10).map((row) => (
-                    <li key={row.key}>
-                      <span>{row.name}</span>
-                      <b>x{row.qty}</b>
-                    </li>
-                  ))}
-                </ul>
-              </div>
 
                 <div className="hub-effects">
                   <div className="hub-decklist__head">
                     <span>효과 경향</span>
                   </div>
-                <div className="hub-effects__chips">
-                  {(item.summary?.effects || []).length ? (
-                    item.summary?.effects.map(([name, count]) => (
-                      <span className="hub-chip" key={name}>
-                        {name} <b>{count}</b>
-                      </span>
-                    ))
-                  ) : (
-                    <span className="muted">표시할 효과 없음</span>
-                  )}
-                </div>
-                <div className="hub-card-previews">
-                  {renderHubCardPreview(item.summary, defs)}
+                  <div className="hub-effects__chips">
+                    {(item.summary?.effects || []).length ? (
+                      item.summary?.effects.map(([name, count]) => (
+                        <span className="hub-chip" key={name}>
+                          {name} <b>{count}</b>
+                        </span>
+                      ))
+                    ) : (
+                      <span className="muted">표시할 효과 없음</span>
+                    )}
+                  </div>
+                  <div className="hub-card-previews">
+                    {renderHubCardPreview(item.summary, defs)}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="hub-actions">
-              <button
+              <div className="hub-actions">
+                <ButtonSurface
+                  className="ghost nulsight-button"
+                  type="button"
+                  onClick={async () => {
+                    const copied = await writeClipboardTextSafe(item.code)
+                    setStatus(copied ? '덱 코드를 복사했습니다.' : '덱 코드 복사에 실패했습니다.')
+                  }}
+                >
+                  코드 복사
+                </ButtonSurface>
+                <ButtonSurface
+                  className="primary nulsight-button nulsight-button--primary"
+                  type="button"
+                  onClick={() => void importToDeck(item.id)}
+                  variant="solid"
+                >
+                  가져오기
+                </ButtonSurface>
+                {item.mine ? (
+                  <ButtonSurface className="ghost nulsight-button" type="button" onClick={() => setDeleteTarget(item)}>
+                    삭제
+                  </ButtonSurface>
+                ) : null}
+              </div>
+            </article>
+          ))
+        ) : (
+          <article className="hub-card hub-card--empty nulsight-panel nulsight-panel--compact">
+            <p className="nulsight-kicker">비어 있음</p>
+            <h3>공개된 덱이 없습니다</h3>
+            <p className="muted">다른 키워드로 다시 검색하거나 덱을 업로드해 주세요.</p>
+            <div className="hub-empty-actions">
+              <ButtonSurface
                 className="ghost nulsight-button"
                 type="button"
-                onClick={async () => {
-                  const copied = await writeClipboardTextSafe(item.code)
-                  setStatus(copied ? '덱 코드를 복사했습니다.' : '덱 코드 복사에 실패했습니다.')
-                }}
+                aria-controls="deckHubUpload"
+                onClick={() => setUploadOpen(true)}
               >
-                코드 복사
-              </button>
-              <button className="primary nulsight-button nulsight-button--primary" type="button" onClick={() => void importToDeck(item.id)}>
-                내 덱으로 가져오기
-              </button>
-              {item.mine ? (
-                <button className="ghost nulsight-button" type="button" onClick={() => setDeleteTarget(item)}>
-                  삭제
-                </button>
-              ) : null}
+                업로드로 이동
+              </ButtonSurface>
             </div>
           </article>
-        ))}
+        )}
       </section>
 
       {hasMore ? (
         <div className="hub-loadmore-wrap">
-          <button className="ghost nulsight-button" type="button" onClick={() => void refresh(false)} disabled={busy !== null}>
+          <ButtonSurface className="ghost nulsight-button" type="button" onClick={() => void refresh(false)} disabled={busy !== null}>
             더 불러오기
-          </button>
+          </ButtonSurface>
         </div>
       ) : null}
 
-      <section className="nulsight-panel nulsight-panel--compact hub-toolbar hub-upload" aria-label="덱 업로드">
-        <div>
-          <p className="nulsight-kicker">UPLOAD</p>
-          <h2 className="nulsight-section-title">덱 올리기</h2>
-        </div>
-        <div className="hub-toolbar__row">
-          <input
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
+      <details
+        id="deckHubUpload"
+        className="nulsight-panel nulsight-panel--compact hub-toolbar hub-upload"
+        aria-label="덱 업로드"
+        open={uploadOpen}
+        onToggle={(event) => setUploadOpen(event.currentTarget.open)}
+      >
+        <summary>덱 업로드</summary>
+        <div className="hub-upload__body">
+          <div className="hub-toolbar__row hub-toolbar__row--even">
+            <input
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              autoComplete="off"
+              maxLength={60}
+              placeholder="덱 이름"
+            />
+            <input
+              value={tags}
+              onChange={(event) => setTags(event.target.value)}
+              autoComplete="off"
+              placeholder="태그(쉼표 구분)"
+            />
+          </div>
+          <textarea
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
             autoComplete="off"
-            maxLength={60}
-            placeholder="덱 이름 (최대 60자)"
+            maxLength={300}
+            rows={2}
+            placeholder="설명"
           />
-          <input
-            value={tags}
-            onChange={(event) => setTags(event.target.value)}
+          <textarea
+            value={code}
+            onChange={(event) => setCode(event.target.value)}
             autoComplete="off"
-            placeholder="태그(쉼표 구분)"
+            spellCheck={false}
+            rows={3}
+            placeholder="덱 코드"
           />
+          <div className="hub-toolbar__row hub-toolbar__row--actions">
+            <ButtonSurface className="ghost nulsight-button" type="button" onClick={() => void pasteDeckHubCode()} disabled={busy !== null}>
+              붙여넣기
+            </ButtonSurface>
+            <ButtonSurface
+              className="primary nulsight-button nulsight-button--primary"
+              type="button"
+              onClick={() => void publishDeckPost()}
+              disabled={busy !== null}
+              variant="solid"
+            >
+              올리기
+            </ButtonSurface>
+          </div>
         </div>
-        <textarea
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          autoComplete="off"
-          maxLength={300}
-          rows={2}
-          placeholder="덱 설명 (선택, 최대 300자)"
-        />
-        <textarea
-          value={code}
-          onChange={(event) => setCode(event.target.value)}
-          autoComplete="off"
-          spellCheck={false}
-          rows={3}
-          placeholder="공유할 덱 코드를 붙여넣어 주세요"
-        />
-        <div className="hub-toolbar__row">
-          <button className="ghost nulsight-button" type="button" onClick={() => void pasteDeckHubCode()} disabled={busy !== null}>
-            코드 붙여넣기
-          </button>
-          <button className="primary nulsight-button nulsight-button--primary" type="button" onClick={() => void publishDeckPost()} disabled={busy !== null}>
-            허브에 올리기
-          </button>
-        </div>
-      </section>
+      </details>
 
       <ActionDialog
         open={Boolean(deleteTarget)}
-        kicker="DECK HUB"
+        kicker="덱 허브"
         title="이 덱을 허브에서 삭제할까요?"
         description={deleteTarget ? `"${deleteTarget.title}" 게시글이 허브에서 제거됩니다.` : ''}
         confirmLabel="삭제"

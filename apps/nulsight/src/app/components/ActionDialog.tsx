@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { ButtonSurface } from '@portfolio/ui-shell'
 
 type ActionDialogProps = {
   open: boolean
@@ -104,17 +105,18 @@ export function ActionDialog({
 
         <div className="nulsight-actions nulsight-actions--compact">
           {cancelLabel ? (
-            <button className="nulsight-button" type="button" onClick={onCancel}>
+            <ButtonSurface className="nulsight-button" type="button" onClick={onCancel}>
               {cancelLabel}
-            </button>
+            </ButtonSurface>
           ) : null}
-          <button
+          <ButtonSurface
             className="nulsight-button nulsight-button--primary"
             type="button"
             onClick={() => onConfirm(inputLabel ? value.trim() : undefined)}
+            variant="solid"
           >
             {confirmLabel}
-          </button>
+          </ButtonSurface>
         </div>
       </section>
     </div>

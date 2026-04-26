@@ -4,12 +4,13 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "build:theme": "node ../../scripts/build-theme-css.mjs ../../themes/theme.oklch.css ../../themes/theme.css",
-    "dev": "npm run build:theme && vite",
-    "build": "npm run build:theme && tsc -b && vite build",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@portfolio/services": "*",
+    "@portfolio/ui-shell": "*",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.14.0"

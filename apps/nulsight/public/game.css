@@ -73,7 +73,7 @@ body {
 
 .game-status-strip__main {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--sp-4);
 }
@@ -81,6 +81,14 @@ body {
 .game-status-strip__identity {
     display: grid;
     gap: 2px;
+}
+
+.game-status-strip__headline {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .game-status-strip__sub {
@@ -189,33 +197,35 @@ body {
 }
 
 .game-toolbar--rail {
-    grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr);
+    grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1.28fr);
     align-items: start;
-    gap: 10px;
+    gap: 14px;
     border: 1px solid var(--theme-shell-border);
-    background: var(--theme-shell-fill);
-    padding: 8px 12px;
-    min-height: 60px;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--theme-panel-strong) 82%, transparent), transparent 80%),
+        var(--theme-shell-fill);
+    padding: 10px 12px;
+    min-height: 0;
 }
 
 .game-toolbar__identity {
     display: grid;
-    gap: 2px;
+    gap: 8px;
     align-content: center;
-    min-height: 32px;
+    min-height: 0;
 }
 
 .game-toolbar__actions {
     display: grid;
     gap: 8px;
-    justify-items: end;
+    justify-items: stretch;
     align-content: center;
 }
 
 .game-toolbar__cluster {
     display: grid;
-    gap: 6px;
-    justify-items: end;
+    gap: 5px;
+    justify-items: stretch;
     width: 100%;
 }
 
@@ -235,18 +245,18 @@ body {
 }
 
 .game-toolbar__group--active {
-    min-height: 30px;
+    min-height: 0;
 }
 
 .game-toolbar__empty {
     align-self: center;
-    min-height: 40px;
+    min-height: 34px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0 12px;
-    border: 1px solid var(--theme-border);
-    background: var(--theme-bg-elevated);
+    padding: 0;
+    border: 0;
+    background: transparent;
     font-size: 12px;
     color: var(--theme-muted);
 }
@@ -257,18 +267,57 @@ body {
     font-size: var(--fs-min-readable);
     line-height: 1.45;
     max-width: none;
+    white-space: normal;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    line-break: strict;
+    text-wrap: pretty;
+}
+
+.game-command__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    align-items: center;
+    color: var(--theme-muted);
+    font-size: 12px;
+    line-height: 1.35;
+    word-break: keep-all;
+    line-break: strict;
+}
+
+.game-command__meta-item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    min-width: 0;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+}
+
+.game-command__meta-label {
+    color: var(--theme-subtle);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.game-command__meta-value {
+    color: var(--theme-text);
+    font-weight: 800;
 }
 
 .game-toolbar button {
-    min-height: 36px;
+    min-height: 34px;
     border: 1px solid var(--theme-border-strong);
     background: var(--theme-bg-elevated);
     color: var(--theme-text);
     box-shadow: none;
     padding-inline: 12px;
+}
+
+.game-toolbar__group button,
+.game-toolbar__empty {
+    min-width: 104px;
 }
 
 .game-toolbar .nulsight-button--primary,
@@ -358,10 +407,63 @@ body {
     padding-left: 2px;
 }
 
+@media (max-width: 980px) {
+    .game-status-strip__main {
+        grid-template-columns: 1fr;
+    }
+
+    .game-status-strip__headline {
+        justify-content: flex-start;
+    }
+
+    .game-toolbar--rail {
+        grid-template-columns: 1fr;
+    }
+
+    .game-toolbar__actions,
+    .game-toolbar__cluster {
+        justify-items: stretch;
+    }
+
+    .game-toolbar__group {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 640px) {
+    .game-toolbar__group button,
+    .game-toolbar__empty {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+}
+
 .zone-row {
     width: 100%;
     display: flex;
     justify-content: center;
+}
+
+.zone-row--labeled {
+    display: grid;
+    gap: 6px;
+}
+
+.zone-row__labels {
+    display: grid;
+    justify-content: center;
+    gap: var(--sp-4);
+    color: var(--theme-subtle);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.zone-row__label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 16px;
 }
 
 .slots {
@@ -377,6 +479,14 @@ body {
 }
 
 .spell {
+    grid-template-columns: repeat(4, var(--zone-cell));
+}
+
+.zone-row--monster .zone-row__labels {
+    grid-template-columns: repeat(3, var(--zone-cell));
+}
+
+.zone-row--spell .zone-row__labels {
     grid-template-columns: repeat(4, var(--zone-cell));
 }
 
@@ -551,8 +661,8 @@ body {
     transform-origin: center;
     z-index: calc(var(--hand-i, 0) + 1);
     flex: 0 0 auto;
-    width: 132px;
-    height: 180px;
+    width: 144px;
+    height: 192px;
     border: 1px solid var(--theme-border-strong);
     background: var(--theme-panel-fill-raised);
     padding: var(--sp-4);
@@ -594,10 +704,18 @@ body {
 
 .bp-card__name {
     font-size: 13px;
+    line-height: 1.2;
+    word-break: keep-all;
+    overflow-wrap: normal;
+    line-break: strict;
 }
 
 .bp-card__text {
-    font-size: 11.5px;
+    font-size: 11.8px;
+    line-height: 1.45;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    line-break: strict;
     -webkit-line-clamp: 4;
 }
 
@@ -810,6 +928,9 @@ body {
     line-height: 1.4;
     color: var(--c-text);
     white-space: pre-wrap;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    line-break: strict;
 }
 
 .card-overlay__sub {
@@ -878,11 +999,7 @@ body {
 }
 
 .query-overlay__actions {
-    margin-top: 16px;
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--sp-4);
-    flex-wrap: wrap;
+    margin-top: 4px;
 }
 
 /* =============================
@@ -1014,14 +1131,38 @@ body {
         --overlay-card-h: 160px;
     }
 
+    .zone-footer {
+        flex-direction: column;
+    }
+
+    .attack-agent {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .side {
+        width: 100%;
+    }
+
     .hand {
-        gap: 0;
+        gap: 8px;
         padding-bottom: 12px;
+        padding-inline: 6px;
+        justify-content: flex-start;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x proximity;
     }
 
     .hand-card {
-        width: 118px;
-        height: 160px;
+        width: 132px;
+        height: 178px;
+        margin-left: 0 !important;
+        scroll-snap-align: start;
+    }
+
+    .hand-card .bp-card__name {
+        font-size: 12px;
     }
 
     .card-overlay__panel {

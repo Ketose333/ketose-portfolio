@@ -2,18 +2,21 @@
   color-scheme: dark;
   --theme-font-sans: "Pretendard", "Noto Sans KR", "Segoe UI", "Malgun Gothic", sans-serif;
   --theme-font-display: "Oxanium", var(--theme-font-sans);
+  --theme-brand-mist: oklch(85.23% 0.0097 222.07);
+  --theme-brand-violet: oklch(50.07% 0.0848 311.06);
+  --theme-brand-cyan: oklch(89.38% 0.0901 208.93);
   --theme-bg: oklch(7% 0.008 260);
   --theme-bg-elevated: oklch(12% 0.01 260);
   --theme-panel: oklch(100% 0 0 / 0.03);
   --theme-panel-strong: oklch(14% 0.012 260);
-  --theme-text: oklch(97% 0 0);
-  --theme-muted: oklch(97% 0 0 / 0.78);
-  --theme-muted-strong: oklch(97% 0 0 / 0.62);
-  --theme-subtle: oklch(97% 0 0 / 0.58);
-  --theme-border: oklch(100% 0 0 / 0.1);
-  --theme-border-strong: oklch(100% 0 0 / 0.16);
-  --theme-shell-border: oklch(100% 0 0 / 0.24);
-  --theme-shell-border-strong: oklch(100% 0 0 / 0.4);
+  --theme-text: var(--theme-brand-mist);
+  --theme-muted: oklch(85.23% 0.0097 222.07 / 0.78);
+  --theme-muted-strong: oklch(85.23% 0.0097 222.07 / 0.62);
+  --theme-subtle: oklch(85.23% 0.0097 222.07 / 0.58);
+  --theme-border: oklch(85.23% 0.0097 222.07 / 0.11);
+  --theme-border-strong: oklch(85.23% 0.0097 222.07 / 0.18);
+  --theme-shell-border: oklch(85.23% 0.0097 222.07 / 0.26);
+  --theme-shell-border-strong: oklch(89.38% 0.0901 208.93 / 0.44);
   --theme-surface: oklch(7% 0.008 260);
   --theme-surface-strong: oklch(12% 0.01 260);
   --theme-surface-contrast: oklch(14% 0.012 260);
@@ -23,12 +26,40 @@
   --theme-alpha-whisper: 0.22;
   --theme-overlay: oklch(0% 0 0 / 0.82);
   --theme-overlay-strong: oklch(0% 0 0 / 0.92);
-  --theme-wash-top: oklch(100% 0 0 / 0.03);
-  --theme-wash-accent: oklch(68% 0.08 275 / 0.08);
+  --theme-wash-top: oklch(85.23% 0.0097 222.07 / 0.035);
+  --theme-wash-accent: oklch(50.07% 0.0848 311.06 / 0.16);
+  --theme-page-grid-size: 44px;
+  --theme-page-grid-line: oklch(85.23% 0.0097 222.07 / 0.08);
+  --theme-page-background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-wash-accent) 42%, transparent),
+      transparent 340px
+    ),
+    linear-gradient(90deg, var(--theme-page-grid-line) 1px, transparent 1px),
+    linear-gradient(180deg, var(--theme-page-grid-line) 1px, transparent 1px),
+    var(--theme-bg);
+  --theme-page-background-size: auto, var(--theme-page-grid-size) var(--theme-page-grid-size),
+    var(--theme-page-grid-size) var(--theme-page-grid-size), auto;
+  --theme-accent-violet: var(--theme-brand-violet);
+  --theme-accent-cyan: var(--theme-brand-cyan);
+  --theme-accent-soft: oklch(89.38% 0.0901 208.93 / 0.18);
+  --theme-accent-strong: oklch(91.5% 0.076 209);
+  --theme-button-solid-border: color-mix(
+    in srgb,
+    var(--theme-accent-cyan) 58%,
+    var(--theme-border-strong) 42%
+  );
+  --theme-button-solid-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-accent-cyan) 18%, var(--theme-panel-strong) 82%),
+    color-mix(in srgb, var(--theme-accent-violet) 14%, var(--theme-bg-elevated) 86%)
+  );
+  --theme-button-solid-color: var(--theme-text);
+  --theme-choice-active-bg: color-mix(in srgb, var(--theme-accent-cyan) 12%, var(--theme-panel-strong) 88%);
   --theme-shell-fill: linear-gradient(
     180deg,
     color-mix(in srgb, var(--theme-panel-strong) 94%, black 6%),
-    color-mix(in srgb, var(--theme-panel) 92%, black 8%)
+    color-mix(in srgb, var(--theme-bg-elevated) 92%, black 8%)
   );
   --theme-panel-fill-raised: linear-gradient(
     180deg,

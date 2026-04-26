@@ -1,22 +1,25 @@
 /* AUTO-GENERATED from theme.oklch.css by scripts/build-theme-css.mjs */
-/* Single source of truth: ../../themes/theme.oklch.css */
+/* Single source of truth: themes/theme.oklch.css */
 
 :root {
   color-scheme: dark;
   --theme-font-sans: "Pretendard", "Noto Sans KR", "Segoe UI", "Malgun Gothic", sans-serif;
   --theme-font-display: "Oxanium", var(--theme-font-sans);
+  --theme-brand-mist: rgb(200 208 211);
+  --theme-brand-violet: rgb(115 85 135);
+  --theme-brand-cyan: rgb(145 237 252);
   --theme-bg: rgb(1 1 2);
   --theme-bg-elevated: rgb(4 6 9);
   --theme-panel: rgb(255 255 255 / 0.03);
   --theme-panel-strong: rgb(7 9 14);
-  --theme-text: rgb(245 245 245);
-  --theme-muted: rgb(245 245 245 / 0.78);
-  --theme-muted-strong: rgb(245 245 245 / 0.62);
-  --theme-subtle: rgb(245 245 245 / 0.58);
-  --theme-border: rgb(255 255 255 / 0.1);
-  --theme-border-strong: rgb(255 255 255 / 0.16);
-  --theme-shell-border: rgb(255 255 255 / 0.24);
-  --theme-shell-border-strong: rgb(255 255 255 / 0.4);
+  --theme-text: var(--theme-brand-mist);
+  --theme-muted: rgb(200 208 211 / 0.78);
+  --theme-muted-strong: rgb(200 208 211 / 0.62);
+  --theme-subtle: rgb(200 208 211 / 0.58);
+  --theme-border: rgb(200 208 211 / 0.11);
+  --theme-border-strong: rgb(200 208 211 / 0.18);
+  --theme-shell-border: rgb(200 208 211 / 0.26);
+  --theme-shell-border-strong: rgb(145 237 252 / 0.44);
   --theme-surface: rgb(1 1 2);
   --theme-surface-strong: rgb(4 6 9);
   --theme-surface-contrast: rgb(7 9 14);
@@ -26,12 +29,40 @@
   --theme-alpha-whisper: 0.22;
   --theme-overlay: rgb(0 0 0 / 0.82);
   --theme-overlay-strong: rgb(0 0 0 / 0.92);
-  --theme-wash-top: rgb(255 255 255 / 0.03);
-  --theme-wash-accent: rgb(138 149 202 / 0.08);
+  --theme-wash-top: rgb(200 208 211 / 0.035);
+  --theme-wash-accent: rgb(115 85 135 / 0.16);
+  --theme-page-grid-size: 44px;
+  --theme-page-grid-line: rgb(200 208 211 / 0.08);
+  --theme-page-background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-wash-accent) 42%, transparent),
+      transparent 340px
+    ),
+    linear-gradient(90deg, var(--theme-page-grid-line) 1px, transparent 1px),
+    linear-gradient(180deg, var(--theme-page-grid-line) 1px, transparent 1px),
+    var(--theme-bg);
+  --theme-page-background-size: auto, var(--theme-page-grid-size) var(--theme-page-grid-size),
+    var(--theme-page-grid-size) var(--theme-page-grid-size), auto;
+  --theme-accent-violet: var(--theme-brand-violet);
+  --theme-accent-cyan: var(--theme-brand-cyan);
+  --theme-accent-soft: rgb(145 237 252 / 0.18);
+  --theme-accent-strong: rgb(166 242 254);
+  --theme-button-solid-border: color-mix(
+    in srgb,
+    var(--theme-accent-cyan) 58%,
+    var(--theme-border-strong) 42%
+  );
+  --theme-button-solid-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-accent-cyan) 18%, var(--theme-panel-strong) 82%),
+    color-mix(in srgb, var(--theme-accent-violet) 14%, var(--theme-bg-elevated) 86%)
+  );
+  --theme-button-solid-color: var(--theme-text);
+  --theme-choice-active-bg: color-mix(in srgb, var(--theme-accent-cyan) 12%, var(--theme-panel-strong) 88%);
   --theme-shell-fill: linear-gradient(
     180deg,
     color-mix(in srgb, var(--theme-panel-strong) 94%, black 6%),
-    color-mix(in srgb, var(--theme-panel) 92%, black 8%)
+    color-mix(in srgb, var(--theme-bg-elevated) 92%, black 8%)
   );
   --theme-panel-fill-raised: linear-gradient(
     180deg,

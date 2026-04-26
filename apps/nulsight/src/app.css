@@ -1,11 +1,11 @@
-@import url('/styles.css');
-@import url('/header-footer.css');
-@import url('/guide.css');
-@import url('/deck.css');
-@import url('/deck-hub.css');
+@import './styles/core.css';
+@import './styles/guide.css';
+@import './styles/deck.css';
+@import './styles/deck-hub.css';
 
 body {
-  background: var(--theme-bg);
+  background: var(--theme-page-background);
+  background-size: var(--theme-page-background-size);
   color: var(--theme-text);
 }
 
@@ -27,34 +27,13 @@ body {
   flex: 1 0 auto;
   display: flex;
   flex-direction: column;
-  padding-top: 24px;
+  padding-top: 18px;
 }
 
 .nulsight-app-shell__content--game {
   min-height: 100dvh;
   padding-top: 18px;
   padding-bottom: 18px;
-}
-
-.bp-header__nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
-
-.bp-nav-link {
-  color: var(--c-text-soft);
-  text-decoration: none;
-  font-size: var(--fs-min-readable);
-  padding: 6px 8px;
-  border-radius: 0;
-}
-
-.bp-nav-link--active,
-.bp-nav-link:hover {
-  color: var(--c-text-strong);
-  background: var(--c-surface-1);
 }
 
 .nulsight-shell {
@@ -95,6 +74,14 @@ body {
   margin: 20px 0 0;
   color: var(--theme-muted);
   line-height: 1.7;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-break: strict;
+  text-wrap: pretty;
+}
+
+.nulsight-copy--tight {
+  margin-top: 12px;
 }
 
 .nulsight-actions {
@@ -111,15 +98,28 @@ body {
   min-height: 44px;
   padding: 0 16px;
   border: 1px solid var(--theme-border-strong);
-  background: var(--theme-panel);
+  background: color-mix(in srgb, var(--theme-panel-strong) 92%, black 8%);
   color: var(--theme-text);
   text-decoration: none;
   font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
 }
 
 .nulsight-button--primary {
-  background: var(--theme-text);
-  color: var(--theme-bg);
+  border-color: var(--theme-button-solid-border);
+  background: var(--theme-button-solid-bg);
+  color: var(--theme-button-solid-color);
+}
+
+.nulsight-button:hover {
+  transform: translateY(-1px);
+  border-color: var(--theme-shell-border-strong);
 }
 
 .nulsight-grid {
@@ -145,7 +145,8 @@ body {
 
 .nulsight-card {
   border: 1px solid var(--theme-border);
-  background: var(--theme-panel);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-panel-strong) 88%, white 12%), var(--theme-bg-elevated));
   padding: 20px;
 }
 
@@ -173,12 +174,19 @@ body {
   display: grid;
   gap: 18px;
   border: 1px solid var(--theme-shell-border);
-  background: var(--theme-panel);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-panel-strong) 94%, white 6%), color-mix(in srgb, var(--theme-panel) 92%, black 8%));
   padding: 24px;
+  box-shadow: var(--theme-elevation-shadow);
 }
 
 .nulsight-panel--compact {
   padding: 20px;
+}
+
+.nulsight-panel--hero {
+  gap: 24px;
+  padding: 28px;
 }
 
 .nulsight-panel__head {
@@ -198,11 +206,11 @@ body {
 .nulsight-section-title {
   margin: 0;
   font-size: clamp(1.3rem, 2vw, 1.9rem);
-  line-height: 1.1;
+  line-height: 1.14;
 }
 
 .nulsight-shell--narrow {
-  width: min(680px, calc(100vw - 48px));
+  width: min(720px, calc(100vw - 40px));
 }
 
 .nulsight-shell--reading {
@@ -245,6 +253,13 @@ body.nulsight-game-overlay-open {
 .nulsight-card h2 {
   font-size: 0.95rem;
   font-weight: 700;
+}
+
+.nulsight-card h2,
+.nulsight-panel-label,
+.nulsight-band__label {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 .nulsight-label input,
@@ -325,7 +340,7 @@ body.nulsight-game-overlay-open {
 }
 
 .nulsight-button:disabled,
-.bp-header-btn:disabled,
+.ui-shell-chrome__button:disabled,
 .game-toolbar button:disabled,
 .attack-agent:disabled {
   opacity: var(--theme-alpha-disabled);
@@ -349,6 +364,13 @@ body.nulsight-game-overlay-open {
   margin-top: 16px;
 }
 
+.nulsight-note-stack--panel {
+  margin-top: 0;
+  padding: 16px;
+  border: 1px solid var(--theme-border);
+  background: color-mix(in srgb, var(--theme-bg-elevated) 92%, black 8%);
+}
+
 .nulsight-note-stack--tight {
   margin-top: 12px;
 }
@@ -359,6 +381,12 @@ body.nulsight-game-overlay-open {
   color: var(--theme-muted);
   line-height: 1.6;
   word-break: keep-all;
+  text-wrap: pretty;
+}
+
+.nulsight-status--strong {
+  color: var(--theme-text);
+  font-size: 1rem;
 }
 
 .nulsight-inline-link {
@@ -367,6 +395,10 @@ body.nulsight-game-overlay-open {
 
 .nulsight-actions--compact {
   margin-top: 16px;
+}
+
+.nulsight-actions--form {
+  margin-top: 4px;
 }
 
 .nulsight-dialog-backdrop {
@@ -437,7 +469,8 @@ body.nulsight-game-overlay-open {
   min-width: 0;
   padding: 16px;
   border: 1px solid var(--theme-border);
-  background: var(--theme-bg-elevated);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-elevated) 88%, white 12%), var(--theme-bg));
   font-family: var(--theme-font-display);
   font-size: clamp(1.7rem, 3.4vw, 2.6rem);
   letter-spacing: 0.16em;
@@ -448,7 +481,7 @@ body.nulsight-game-overlay-open {
   gap: 10px;
   padding: 14px;
   border: 1px solid var(--theme-border);
-  background: var(--theme-bg-elevated);
+  background: color-mix(in srgb, var(--theme-bg-elevated) 92%, black 8%);
 }
 
 .nulsight-room-code__label {
@@ -478,7 +511,7 @@ body.nulsight-game-overlay-open {
 .nulsight-mini-card {
   padding: 14px;
   border: 1px solid var(--theme-border);
-  background: var(--theme-bg-elevated);
+  background: color-mix(in srgb, var(--theme-bg-elevated) 92%, black 8%);
 }
 
 .nulsight-kv-list div {
@@ -529,12 +562,216 @@ body.nulsight-game-overlay-open {
   gap: 4px;
   padding: 14px;
   border: 1px solid var(--theme-border);
-  background: var(--theme-bg-elevated);
+  background: color-mix(in srgb, var(--theme-bg-elevated) 92%, black 8%);
 }
 
 .nulsight-step-list span {
   color: var(--theme-muted);
   line-height: 1.6;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-break: strict;
+  text-wrap: pretty;
+}
+
+.nulsight-band-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.nulsight-band-list--guide {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.nulsight-band {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--theme-border);
+  background: color-mix(in srgb, var(--theme-bg-elevated) 90%, black 10%);
+}
+
+.nulsight-band__label {
+  color: var(--theme-subtle);
+  font-size: 0.72rem;
+}
+
+.nulsight-band__value {
+  color: var(--theme-text);
+  line-height: 1.45;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-break: strict;
+  text-wrap: pretty;
+}
+
+.nulsight-panel-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) auto;
+  gap: 16px;
+  align-items: end;
+}
+
+.nulsight-ops-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+}
+
+.nulsight-panel-label {
+  margin: 0 0 2px;
+  color: var(--theme-subtle);
+  font-size: 0.72rem;
+}
+
+.nulsight-agent-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nulsight-agent-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--theme-border);
+  background: color-mix(in srgb, var(--theme-panel-strong) 90%, black 10%);
+  color: var(--theme-text);
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.nulsight-agent-chip--empty {
+  color: var(--theme-subtle);
+}
+
+.nulsight-auth-panel {
+  gap: 16px;
+  margin: auto 0;
+}
+
+.nulsight-auth-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.nulsight-auth-form {
+  min-width: 0;
+}
+
+.nulsight-flow-block {
+  display: grid;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.nulsight-step-list--compact li {
+  gap: 2px;
+  padding: 10px 12px;
+}
+
+.nulsight-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.nulsight-shell--lobby .nulsight-page-grid {
+  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+  gap: 18px;
+}
+
+.nulsight-chrome {
+  overflow: clip;
+}
+
+.nulsight-chrome__header {
+  align-items: end;
+}
+
+.nulsight-chrome .ui-shell-chrome__header-grid {
+  padding: 10px 0;
+  gap: 12px;
+}
+
+.nulsight-chrome .ui-shell-chrome__nav-link,
+.nulsight-chrome .ui-shell-chrome__button {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.nulsight-chrome__nav-full,
+.nulsight-chrome__nav-compact {
+  display: contents;
+}
+
+.nulsight-chrome__nav-compact {
+  display: none;
+}
+
+.nulsight-chrome__more {
+  position: relative;
+}
+
+.nulsight-chrome__more-summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.nulsight-chrome__more-summary::-webkit-details-marker {
+  display: none;
+}
+
+.nulsight-chrome__more-menu {
+  position: absolute;
+  display: none;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  min-width: 136px;
+  padding: 6px;
+  border: 1px solid var(--theme-shell-border);
+  background: color-mix(in srgb, var(--theme-panel-strong) 96%, black 4%);
+  box-shadow: 0 18px 42px color-mix(in srgb, black 34%, transparent);
+}
+
+.nulsight-chrome__more[open] .nulsight-chrome__more-menu {
+  display: grid;
+  gap: 6px;
+}
+
+.nulsight-chrome__brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+}
+
+.nulsight-chrome__wordmark {
+  font-size: 1rem;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.nulsight-chrome__user {
+  color: var(--theme-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.nulsight-chrome__footer-grid {
+  grid-template-columns: 1fr;
+  gap: 8px;
 }
 
 .nulsight-shell--game .nulsight-panel {
@@ -561,38 +798,77 @@ body.nulsight-game-overlay-open {
   box-shadow: none;
 }
 
+.hub-toolbar__head .nulsight-copy {
+  margin: 0;
+  color: var(--theme-muted);
+  max-width: 60ch;
+}
+
+.deck-toolbar__signals,
+.hub-toolbar__signals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .deck-card,
 .nulsight-mini-card,
 .nulsight-kv-list div,
 .nulsight-step-list li {
   border-color: var(--theme-border);
-  background: var(--theme-bg-elevated);
+  background: color-mix(in srgb, var(--theme-bg-elevated) 92%, black 8%);
+}
+
+.nulsight-mini-card p {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-break: strict;
+  text-wrap: pretty;
 }
 
 @media (max-width: 980px) {
-  .bp-header__inner {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .bp-header__nav {
-    width: 100%;
-  }
-
-  .bp-header__actions {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
   .nulsight-page-grid,
   .nulsight-lobby-grid,
   .nulsight-form-grid,
-  .nulsight-mini-grid {
+  .nulsight-mini-grid,
+  .nulsight-auth-layout,
+  .nulsight-guide-grid,
+  .nulsight-band-list,
+  .nulsight-band-list--guide,
+  .deck-toolbar__signals,
+  .hub-toolbar__signals,
+  .nulsight-panel-split {
     grid-template-columns: 1fr;
+  }
+
+  .nulsight-shell--lobby .nulsight-page-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nulsight-ops-footer {
+    grid-template-columns: 1fr;
+    align-items: start;
   }
 
   .nulsight-room-code__row {
     grid-template-columns: 1fr;
+  }
+
+  .nulsight-inline-form,
+  .nulsight-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .nulsight-inline-form input {
+    flex-basis: auto;
+    width: 100%;
+  }
+
+  .nulsight-button,
+  .nulsight-room-code__copy {
+    width: 100%;
+    min-width: 0;
   }
 
   .nulsight-shell,
@@ -604,5 +880,44 @@ body.nulsight-game-overlay-open {
 
   .nulsight-dialog {
     padding: 20px;
+  }
+
+  .nulsight-chrome__header {
+    align-items: start;
+  }
+}
+
+@media (max-width: 720px) {
+  .nulsight-chrome__nav-full {
+    display: none;
+  }
+
+  .nulsight-chrome__nav-compact {
+    display: contents;
+  }
+
+  .nulsight-chrome .ui-shell-chrome__header-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nulsight-chrome .ui-shell-chrome__nav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .nulsight-chrome .ui-shell-chrome__actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    width: 100%;
+  }
+
+  .nulsight-chrome .ui-shell-chrome__nav-link,
+  .nulsight-chrome .ui-shell-chrome__button {
+    width: 100%;
+  }
+
+  .nulsight-chrome__user {
+    grid-column: 1 / -1;
   }
 }

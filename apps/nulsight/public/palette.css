@@ -1,11 +1,11 @@
 /* AUTO-GENERATED from palette.oklch.css by scripts/build-theme-css.mjs */
 /* Single source of truth: public/palette.oklch.css */
 
-/* palette.css — unified blue accent system */
+/* palette.css - NULSIGHT app-local state colors on the shared dark foundation */
 :root {
   /* core */
-  --p-bg-900: rgb(6 9 22);
-  --p-bg-980: rgb(2 4 13);
+  --p-bg-900: var(--theme-bg-elevated);
+  --p-bg-980: var(--theme-bg);
 
   /* blue family accents */
   --p-accent-blue: rgb(86 113 230);
@@ -22,7 +22,7 @@
 
   /* borders */
   --c-line-1: rgb(114 136 207 / 0.24);
-  --c-line-soft: rgb(255 255 255 / 0.08);
+  --c-line-soft: var(--theme-page-grid-line);
   --c-border-strong: rgb(45 58 103 / 0.96);
   --c-ink-border: rgb(8 14 34 / 0.98);
   --c-deep-panel-92: rgb(11 16 35 / 0.96);
@@ -39,14 +39,14 @@
   --c-accent-hp-border: rgb(149 110 210 / 0.92);
   --c-accent-blue-glow-strong: rgb(86 113 230 / 0.38);
 
-  --c-intro-bg: rgb(3 3 6);
+  --c-intro-bg: var(--theme-bg);
   --c-intro-muted: rgb(163 170 190);
   --c-intro-shadow: rgb(0 0 0 / 0.45);
-  --c-intro-panel: rgb(15 21 40);
+  --c-intro-panel: var(--theme-wash-accent);
 
   --c-accent-blue-wash-14: rgb(86 113 230 / 0.08);
 
-  --c-page-base: rgb(1 2 4);
+  --c-page-base: var(--theme-bg);
   --c-btn-ghost-bg: rgb(20 29 59 / 0.82);
 
   /* glow */

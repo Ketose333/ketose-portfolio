@@ -1,3 +1,5 @@
 import { createReactAppConfig } from '../../configs/vite/react-app'
 
-export default createReactAppConfig()
+export default createReactAppConfig({
+  ensureSharedTheme: false,
+})

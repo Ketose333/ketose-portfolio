@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { readAuthSession } from '@portfolio/account-client'
+import { ButtonSurface } from '@portfolio/ui-shell'
+import { mapDeckError } from '../app/api/errors'
 import { postJson, readJson } from '../app/api/client'
 import { ActionDialog } from '../app/components/ActionDialog'
 import { readClipboardTextSafe, writeClipboardTextSafe } from '../client/ui/clipboard'
 import { GatedPageNotice } from '../app/components/GatedPageNotice'
+import { NulsightPanel } from '../app/components/NulsightPanel'
 import { getDeckCodecGlobal, getSharedCardsGlobal, normalizeCardKey, type CardDef } from '../app/globals'
 import type { AuthResponse } from '../app/types'
 
 const MIN_DECK = 30
 const MAX_SAME_CARD = 3
-const PAGE_SIZE = 10
+const PAGE_SIZE = 14
 
 type DeckSlot = {
   id: string
@@ -62,7 +66,7 @@ function validateImportedDeck(deck: string[]) {
   return ''
 }
 
-function renderDeckCard(def: CardDef | undefined, key: string, options?: { count?: number; compact?: boolean }) {
+function renderDeckCard(def: CardDef | undefined, key: string, options?: { count?: number }) {
   const normalizedKey = normalizeCardKey(key)
   const type = def?.type === 'monster' ? '유닛' : '마법'
   const footer = def?.type === 'monster'
@@ -72,7 +76,7 @@ function renderDeckCard(def: CardDef | undefined, key: string, options?: { count
   const effect = normalizeEffectText(def?.effect || '') || '효과 없음'
 
   return (
-    <div className={`deck-card-surface${options?.compact ? ' deck-card-surface--compact' : ''}`}>
+    <div className="deck-card-surface">
       <div className={`bp-card ${def?.type === 'monster' ? 'bp-card--unit' : 'bp-card--spell'}`}>
         <div className="bp-card__chrome" />
         <div className="bp-card__head">
@@ -113,6 +117,7 @@ export function DeckPage() {
   const [authRequired, setAuthRequired] = useState(false)
   const [filter, setFilter] = useState({ race: '', theme: '', element: '' })
   const [poolPage, setPoolPage] = useState(1)
+  const [selectedCardKey, setSelectedCardKey] = useState('')
   const [deckCode, setDeckCode] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
   const [createSlotOpen, setCreateSlotOpen] = useState(false)
@@ -120,6 +125,11 @@ export function DeckPage() {
 
   const counts = useMemo(() => makeCountMap(deck), [deck])
   const activeSlot = slots.find((slot) => slot.id === activeSlotId) || null
+  const deckSignals = [
+    { label: '슬롯', value: activeSlot?.name || '슬롯 미선택' },
+    { label: '장수', value: `${deck.length}장` },
+    { label: '제한', value: `최소 ${MIN_DECK} / 동명 ${MAX_SAME_CARD}` },
+  ]
 
   const filteredCards = useMemo(
     () =>
@@ -135,17 +145,41 @@ export function DeckPage() {
 
   const totalPages = Math.max(1, Math.ceil(filteredCards.length / PAGE_SIZE))
   const pagedCards = filteredCards.slice((poolPage - 1) * PAGE_SIZE, poolPage * PAGE_SIZE)
+  const resolvedSelectedCardKey =
+    selectedCardKey && filteredCards.includes(selectedCardKey) ? selectedCardKey : pagedCards[0] || filteredCards[0] || ''
+  const selectedCard = resolvedSelectedCardKey ? defs[resolvedSelectedCardKey] : undefined
+  const selectedCardMeta = selectedCard
+    ? [
+        selectedCard.type === 'monster' ? '유닛' : '마법',
+        selectedCard.type === 'monster'
+          ? `${selectedCard.atk ?? '-'} / ${selectedCard.hp ?? '-'}`
+          : spellKindLabel(selectedCard.spellKind),
+        selectedCard.race,
+        selectedCard.theme,
+        selectedCard.element,
+      ].filter(Boolean)
+    : []
 
   useEffect(() => {
     setPoolPage((current) => Math.min(Math.max(1, current), totalPages))
   }, [totalPages])
 
   useEffect(() => {
+    if (!filteredCards.length) {
+      setSelectedCardKey('')
+      return
+    }
+    if (!selectedCardKey || !filteredCards.includes(selectedCardKey)) {
+      setSelectedCardKey(filteredCards[0])
+    }
+  }, [filteredCards, selectedCardKey])
+
+  useEffect(() => {
     let cancelled = false
 
     async function bootstrap() {
       try {
-        const auth = await readJson<AuthResponse>('/api/auth?action=me')
+        const auth = await readAuthSession()
         if (!auth.ok || !auth.user) {
           if (!cancelled) {
             setAuthRequired(true)
@@ -217,7 +251,7 @@ export function DeckPage() {
   if (!booting && authRequired && !authUser) {
     return (
       <GatedPageNotice
-        kicker="DECK"
+        kicker="덱"
         title="덱 편집은 로그인 뒤에 사용할 수 있습니다."
         description="카드 추가, 슬롯 저장, 덱 코드 적용은 로그인한 상태에서만 가능합니다."
         primaryAction={{ label: '로그인', onClick: () => navigate('/login?next=%2Fdeck') }}
@@ -236,7 +270,7 @@ export function DeckPage() {
       `/api/deck?action=slots&agentId=${encodeURIComponent(authUser.username)}`,
     )
     if (!response.ok) {
-      setStatus(response.error || '덱 슬롯을 다시 불러오지 못했습니다.')
+      setStatus(mapDeckError(response.error || ''))
       return
     }
 
@@ -256,7 +290,7 @@ export function DeckPage() {
         slotId,
       })
       if (!response.ok) {
-        setStatus(response.error || '슬롯 전환에 실패했습니다.')
+        setStatus(mapDeckError(response.error || ''))
         return
       }
       const nextSlots = response.slots || []
@@ -298,7 +332,7 @@ export function DeckPage() {
         agentId: authUser.username,
         deck,
       })
-      setStatus(response.ok ? '덱을 저장했습니다.' : response.error || '덱 저장에 실패했습니다.')
+      setStatus(response.ok ? '덱을 저장했습니다.' : mapDeckError(response.error || ''))
       if (response.ok) {
         await refreshSlots(activeSlotId)
       }
@@ -317,7 +351,7 @@ export function DeckPage() {
         name,
       })
       if (!response.ok) {
-        setStatus(response.error || '슬롯 생성에 실패했습니다.')
+        setStatus(mapDeckError(response.error || ''))
         return
       }
       await refreshSlots(response.activeSlotId)
@@ -336,7 +370,7 @@ export function DeckPage() {
         slotId: activeSlotId,
       })
       if (!response.ok) {
-        setStatus(response.error || '슬롯 삭제에 실패했습니다.')
+        setStatus(mapDeckError(response.error || ''))
         return
       }
       await refreshSlots(response.activeSlotId)
@@ -398,13 +432,23 @@ export function DeckPage() {
 
   return (
     <main className="nulsight-shell">
-      <section className="nulsight-panel nulsight-panel--compact row deck-toolbar" aria-label="덱 조작">
-        <div className="deck-toolbar__head">
-          <p className="nulsight-kicker">DECK</p>
-          <h1 className="nulsight-section-title">덱 편집</h1>
+      <NulsightPanel
+        ariaLabel="덱 조작"
+        className="deck-toolbar"
+        compact
+        eyebrow="덱 편집"
+        title="덱 구성"
+        titleAs="h1"
+      >
+        <div className="deck-toolbar__signals" aria-label="덱 상태">
+          {deckSignals.map((entry) => (
+            <article className="nulsight-band" key={entry.label}>
+              <span className="nulsight-band__label">{entry.label}</span>
+              <strong className="nulsight-band__value">{entry.value}</strong>
+            </article>
+          ))}
         </div>
         <div className="deck-toolbar__left">
-          <input className="deck-agent" value={authUser?.username || ''} readOnly aria-readonly="true" />
           <select
             className="deck-agent"
             aria-label="덱 슬롯"
@@ -418,61 +462,62 @@ export function DeckPage() {
               </option>
             ))}
           </select>
-          <button className="ghost nulsight-button" type="button" onClick={() => setCreateSlotOpen(true)} disabled={busy !== null}>
+          <ButtonSurface className="ghost nulsight-button" type="button" onClick={() => setCreateSlotOpen(true)} disabled={busy !== null}>
             슬롯 추가
-          </button>
-          <button className="ghost nulsight-button" type="button" onClick={() => setDeleteSlotOpen(true)} disabled={!activeSlotId || busy !== null}>
+          </ButtonSurface>
+          <ButtonSurface className="ghost nulsight-button" type="button" onClick={() => setDeleteSlotOpen(true)} disabled={!activeSlotId || busy !== null}>
             슬롯 삭제
-          </button>
-          <button className="ghost nulsight-button" type="button" onClick={() => void loadDeck()} disabled={busy !== null}>
+          </ButtonSurface>
+          <ButtonSurface className="ghost nulsight-button" type="button" onClick={() => void loadDeck()} disabled={busy !== null}>
             불러오기
-          </button>
-          <button className="primary nulsight-button nulsight-button--primary" type="button" onClick={() => void saveDeck()} disabled={busy !== null}>
+          </ButtonSurface>
+          <ButtonSurface
+            className="primary nulsight-button nulsight-button--primary"
+            type="button"
+            onClick={() => void saveDeck()}
+            disabled={busy !== null}
+            variant="solid"
+          >
             저장
-          </button>
+          </ButtonSurface>
         </div>
 
         <div className="deck-toolbar__right">
           <div className="deck-stat" role="status" aria-live="polite">
-            {deck.length}장 · 최소 {MIN_DECK} / 동명 최대 {MAX_SAME_CARD}
+            {status}
           </div>
         </div>
-      </section>
 
-      <section className="nulsight-panel nulsight-panel--compact deck-share" aria-label="덱 코드 공유">
-        <div className="deck-share__head">
-          <div>
-            <p className="nulsight-kicker">SHARE</p>
-            <h2 className="t-section deck-pane-title">덱 코드</h2>
-          </div>
-        </div>
-        <textarea
-          className="deck-code"
-          rows={3}
-          placeholder="덱 코드를 입력하거나 생성해 주세요."
-          value={deckCode}
-          onChange={(event) => setDeckCode(event.target.value)}
-        />
-        <div className="deck-share__actions">
-          <button className="ghost nulsight-button" type="button" onClick={() => void exportDeckCode()}>
-            코드 생성
-          </button>
-          <button className="ghost nulsight-button" type="button" onClick={() => void pasteDeckCode()}>
-            코드 붙여넣기
-          </button>
-          <button className="primary nulsight-button nulsight-button--primary" type="button" onClick={importDeckCode}>
-            코드 적용
-          </button>
-        </div>
-      </section>
-
-      <div className="deck-grid" aria-label="카드 목록">
-        <article className="nulsight-panel deck-panel">
-          <header className="deck-pane-head">
-            <div>
-              <p className="nulsight-kicker">POOL</p>
-              <h1 className="t-section deck-pane-title">카드 풀</h1>
+        <details className="deck-code-drawer">
+          <summary>덱 코드</summary>
+          <div className="deck-code-drawer__body">
+            <textarea
+              className="deck-code"
+              rows={2}
+              placeholder="덱 코드를 입력하거나 생성해 주세요."
+              value={deckCode}
+              onChange={(event) => setDeckCode(event.target.value)}
+            />
+            <div className="deck-share__actions">
+              <ButtonSurface className="ghost nulsight-button" type="button" onClick={() => void exportDeckCode()}>
+                생성
+              </ButtonSurface>
+              <ButtonSurface className="ghost nulsight-button" type="button" onClick={() => void pasteDeckCode()}>
+                붙여넣기
+              </ButtonSurface>
+              <ButtonSurface className="primary nulsight-button nulsight-button--primary" type="button" onClick={importDeckCode} variant="solid">
+                적용
+              </ButtonSurface>
             </div>
+          </div>
+        </details>
+      </NulsightPanel>
+
+      <div className="deck-workbench" aria-label="덱 편집 작업면">
+        <article className="nulsight-panel deck-panel deck-panel--pool">
+          <header className="deck-pane-head">
+            <h2 className="t-section deck-pane-title">카드 풀</h2>
+            <span className="muted">{filteredCards.length}종</span>
           </header>
 
           <div className="pool-filters" aria-label="카드 풀 필터">
@@ -512,98 +557,140 @@ export function DeckPage() {
                 ))}
               </select>
             </label>
-            <button
+            <ButtonSurface
               className="ghost nulsight-button"
               type="button"
               onClick={() => setFilter({ race: '', theme: '', element: '' })}
             >
               필터 초기화
-            </button>
+            </ButtonSurface>
           </div>
 
           <div className="pool-pager" aria-label="카드 풀 페이지 이동">
-              <button className="ghost nulsight-button" type="button" onClick={() => setPoolPage((page) => Math.max(1, page - 1))}>
-                이전
-              </button>
+            <ButtonSurface className="ghost nulsight-button" type="button" onClick={() => setPoolPage((page) => Math.max(1, page - 1))}>
+              이전
+            </ButtonSurface>
             <span id="poolPageInfo" className="muted">
               {poolPage} / {totalPages}
             </span>
-              <button className="ghost nulsight-button" type="button" onClick={() => setPoolPage((page) => Math.min(totalPages, page + 1))}>
-                다음
-              </button>
-            </div>
+            <ButtonSurface className="ghost nulsight-button" type="button" onClick={() => setPoolPage((page) => Math.min(totalPages, page + 1))}>
+              다음
+            </ButtonSurface>
+          </div>
 
-          <div id="pool" className="deck-pool-grid" aria-label="카드 풀 목록">
+          <div id="pool" className="deck-pool-list" aria-label="카드 풀 목록">
             {pagedCards.map((key) => {
               const card = defs[key]
               const count = counts[key] || 0
               const typeLabel = card?.type === 'monster' ? '유닛' : '마법'
               const stat = card?.type === 'monster' ? `${card.atk}/${card.hp}` : spellKindLabel(card?.spellKind)
-              const chips = [card?.race, card?.theme, card?.element].filter(Boolean)
+              const meta = [typeLabel, stat, card?.theme, card?.element].filter(Boolean).join(' · ')
+              const isSelected = resolvedSelectedCardKey === key
 
               return (
-                <article className="deck-card" key={key}>
-                  {renderDeckCard(card, key, { count })}
-                  <div className="deck-card__meta">
-                    <span className="deck-chip">{typeLabel}</span>
-                    <span className="deck-chip">{stat}</span>
-                    {chips.map((chip) => (
-                      <span className="deck-chip" key={chip}>
-                        {chip}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="deck-card__actions">
-                    <button className="ghost nulsight-button" type="button" onClick={() => removeCard(key)}>
-                      -1
-                    </button>
-                    <button className="primary nulsight-button nulsight-button--primary" type="button" onClick={() => addCard(key)}>
-                      +1
-                    </button>
-                  </div>
-                </article>
+                <button
+                  className={`deck-pool-row${isSelected ? ' deck-pool-row--selected' : ''}`}
+                  key={key}
+                  type="button"
+                  onClick={() => setSelectedCardKey(key)}
+                >
+                  <span className="deck-pool-row__cost">{card?.cost ?? '-'}</span>
+                  <span className="deck-pool-row__body">
+                    <strong>{card?.name || normalizeCardKey(key)}</strong>
+                    <small>{meta}</small>
+                  </span>
+                  <span className="deck-pool-row__count">x{count}</span>
+                </button>
               )
             })}
           </div>
         </article>
 
-        <article className="nulsight-panel deck-panel">
+        <article className="nulsight-panel deck-panel deck-panel--focus">
           <header className="deck-pane-head">
-            <div>
-              <p className="nulsight-kicker">CURRENT</p>
-              <h2 className="t-section deck-pane-title">현재 덱</h2>
+            <h2 className="t-section deck-pane-title">선택 카드</h2>
+          </header>
+
+          {resolvedSelectedCardKey ? (
+            <>
+              {renderDeckCard(selectedCard, resolvedSelectedCardKey, { count: counts[resolvedSelectedCardKey] || 0 })}
+              <div className="deck-focus-meta">
+                {selectedCardMeta.map((chip) => (
+                  <span className="deck-chip" key={chip}>
+                    {chip}
+                  </span>
+                ))}
+              </div>
+              <div className="deck-focus-actions">
+                <ButtonSurface className="ghost nulsight-button" type="button" onClick={() => removeCard(resolvedSelectedCardKey)}>
+                  -1
+                </ButtonSurface>
+                <ButtonSurface
+                  className="primary nulsight-button nulsight-button--primary"
+                  type="button"
+                  onClick={() => addCard(resolvedSelectedCardKey)}
+                  disabled={(counts[resolvedSelectedCardKey] || 0) >= MAX_SAME_CARD}
+                  variant="solid"
+                >
+                  +1
+                </ButtonSurface>
+              </div>
+            </>
+          ) : (
+            <div className="deck-empty-state">
+              <p className="deck-empty-state__title">카드 없음</p>
+              <p className="deck-empty-state__body">필터를 조정해 주세요.</p>
             </div>
+          )}
+        </article>
+
+        <article className="nulsight-panel deck-panel deck-panel--current">
+          <header className="deck-pane-head">
+            <h2 className="t-section deck-pane-title">현재 덱</h2>
+            <span className="muted">{Object.entries(counts).length}종</span>
           </header>
           <div id="deck" aria-label="현재 덱 목록">
-            {Object.entries(counts)
-              .sort((a, b) => compareCardKeys(a[0], b[0], defs))
-              .map(([key, count]) => {
-                const card = defs[key]
-                const chips = [card?.race, card?.theme, card?.element].filter(Boolean)
-                const stat = card?.type === 'monster' ? `${card.atk}/${card.hp}` : spellKindLabel(card?.spellKind)
+            {Object.entries(counts).length ? (
+              Object.entries(counts)
+                .sort((a, b) => compareCardKeys(a[0], b[0], defs))
+                .map(([key, count]) => {
+                  const card = defs[key]
+                  const chips = [card?.race, card?.theme, card?.element].filter(Boolean)
+                  const stat = card?.type === 'monster' ? `${card.atk}/${card.hp}` : spellKindLabel(card?.spellKind)
 
-                return (
-                  <article className="deck-line deck-line--card" key={key}>
-                    <div className="deck-line__main">
-                      {renderDeckCard(card, key, { count, compact: true })}
-                      <small className="muted deck-line__chips">
-                        {[card?.type === 'monster' ? '유닛' : '마법', stat, ...chips].filter(Boolean).join(' · ')}
-                      </small>
-                    </div>
-                  </article>
-                )
-              })}
+                  return (
+                    <article
+                      className={`deck-line deck-line--summary${resolvedSelectedCardKey === key ? ' deck-line--selected' : ''}`}
+                      key={key}
+                    >
+                      <button className="deck-line__main" type="button" onClick={() => setSelectedCardKey(key)}>
+                        <div className="deck-line__row">
+                          <strong className="deck-line__title">{card?.name || normalizeCardKey(key)}</strong>
+                          <span className="deck-line__count">x{count}</span>
+                        </div>
+                        <small className="muted deck-line__chips">
+                          {[card?.type === 'monster' ? '유닛' : '마법', stat, ...chips].filter(Boolean).join(' · ')}
+                        </small>
+                      </button>
+                      <ButtonSurface className="ghost nulsight-button deck-line__remove" type="button" onClick={() => removeCard(key)}>
+                        -1
+                      </ButtonSurface>
+                    </article>
+                  )
+                })
+            ) : (
+              <div className="deck-empty-state">
+                <p className="deck-empty-state__title">덱이 비어 있습니다</p>
+                <p className="deck-empty-state__body">카드 풀에서 카드를 추가해 주세요.</p>
+              </div>
+            )}
           </div>
         </article>
       </div>
 
-      <div className="nulsight-note-stack">
-        <p className="nulsight-status">{status}</p>
-      </div>
-
       <ActionDialog
         open={createSlotOpen}
-        kicker="DECK"
+        kicker="덱"
         title="새 슬롯 만들기"
         description="슬롯 이름을 정하면 빈 덱 슬롯이 추가됩니다."
         inputLabel="슬롯 이름"
@@ -620,7 +707,7 @@ export function DeckPage() {
 
       <ActionDialog
         open={deleteSlotOpen}
-        kicker="DECK"
+        kicker="덱"
         title="현재 슬롯을 삭제할까요?"
         description={activeSlot ? `선택된 슬롯 "${activeSlot.name || '덱 슬롯'}"이 삭제됩니다.` : '현재 슬롯이 삭제됩니다.'}
         confirmLabel="삭제"

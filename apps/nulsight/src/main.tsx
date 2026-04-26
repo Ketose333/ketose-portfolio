@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import '@portfolio/ui-shell/styles.css'
 import App from './App'
 import './app.css'
 

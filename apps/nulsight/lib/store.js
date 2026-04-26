@@ -1,18 +1,53 @@
-const { loadKV, canUseKV, tryKV } = require('./kv-safe');
+const { randomUUID } = require('node:crypto');
+const { loadKV, canUseKV, tryKV, APP_NAMESPACE, LEGACY_NAMESPACE, namespaced, withLegacy, aliasGlobalStore } = require('./storage-config');
 
 const kv = loadKV();
-const mem = globalThis.__nulsight_room_store || new Map();
-globalThis.__nulsight_room_store = mem;
+const mem = aliasGlobalStore('__portfolio_nulsight_room_store', '__nulsight_room_store', () => new Map());
+const roomLocks = aliasGlobalStore('__portfolio_nulsight_room_lock_store', '__nulsight_room_lock_store', () => new Map());
 
-const PREFIX = 'nulsight:room:';
+const ROOM_PREFIX = ['room'];
+const ROOM_META_PREFIX = ['roommeta'];
+const ROOM_GAME_PREFIX = ['roomgame'];
+const ROOM_FINAL_PREFIX = ['roomfinal'];
+const ROOM_PRESENCE_PREFIX = ['roompresence'];
+const ROOM_LOCK_PREFIX = ['roomlock'];
 const INACTIVE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
+const ROOM_TTL_SEC = 60 * 60 * 24;
+const PRESENCE_TTL_SEC = 60 * 60 * 24;
+const ROOM_LOCK_TTL_MS = 5000;
+const ROOM_LOCK_WAIT_MS = 1500;
+const ROOM_LOCK_POLL_MS = 40;
 
 function hasKV() {
   return canUseKV(kv);
 }
 
-function keyOf(prefix, roomId) {
-  return prefix + roomId;
+function roomKeys(roomId) {
+  return withLegacy([...ROOM_PREFIX, roomId]);
+}
+
+function roomMetaKeys(roomId) {
+  return withLegacy([...ROOM_META_PREFIX, roomId]);
+}
+
+function roomGameKeys(roomId) {
+  return withLegacy([...ROOM_GAME_PREFIX, roomId]);
+}
+
+function roomFinalKeys(roomId) {
+  return withLegacy([...ROOM_FINAL_PREFIX, roomId]);
+}
+
+function roomPresenceKeys(roomId) {
+  return withLegacy([...ROOM_PRESENCE_PREFIX, roomId]);
+}
+
+function roomLockKey(roomId) {
+  return namespaced([...ROOM_LOCK_PREFIX, roomId], APP_NAMESPACE);
+}
+
+function roomPattern(prefix, namespace = APP_NAMESPACE) {
+  return `${namespaced(prefix, namespace)}:*`;
 }
 
 async function getByKey(key) {
@@ -20,53 +55,287 @@ async function getByKey(key) {
   return mem.get(key) || null;
 }
 
+async function getByCandidates(candidates = []) {
+  for (const key of candidates) {
+    const value = await getByKey(key);
+    if (value != null) return value;
+  }
+  return null;
+}
+
+async function setStructuredValue(keys, value, ttlSec = ROOM_TTL_SEC) {
+  const [primaryKey] = keys;
+  if (hasKV()) {
+    await tryKV(() => kv.set(primaryKey, value, { ex: ttlSec }), () => mem.set(primaryKey, value));
+    return;
+  }
+  mem.set(primaryKey, value);
+}
+
+async function deleteStructuredValue(keys) {
+  const [primaryKey, legacyKey] = keys;
+  if (hasKV() && typeof kv.del === 'function') {
+    await tryKV(() => kv.del(primaryKey, legacyKey), () => {
+      mem.delete(primaryKey);
+      if (legacyKey) mem.delete(legacyKey);
+    });
+    return;
+  }
+  mem.delete(primaryKey);
+  if (legacyKey) mem.delete(legacyKey);
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function tryAcquireMemRoomLock(key, token, ttlMs) {
+  const now = Date.now();
+  const current = roomLocks.get(key);
+  if (current && current.expiresAt > now && current.token !== token) return false;
+  roomLocks.set(key, { token, expiresAt: now + ttlMs });
+  return true;
+}
+
+async function tryAcquireRoomLock(roomId, token, ttlMs = ROOM_LOCK_TTL_MS) {
+  const key = roomLockKey(roomId);
+  if (hasKV()) {
+    return tryKV(
+      async () => {
+        const result = await kv.set(key, token, { nx: true, px: ttlMs });
+        return result === 'OK';
+      },
+      () => tryAcquireMemRoomLock(key, token, ttlMs)
+    );
+  }
+  return tryAcquireMemRoomLock(key, token, ttlMs);
+}
+
+async function releaseRoomLock(roomId, token) {
+  const key = roomLockKey(roomId);
+  if (hasKV()) {
+    await tryKV(
+      async () => {
+        const current = await kv.get(key);
+        if (current === token && typeof kv.del === 'function') await kv.del(key);
+      },
+      () => {
+        const current = roomLocks.get(key);
+        if (current?.token === token) roomLocks.delete(key);
+      }
+    );
+    return;
+  }
+
+  const current = roomLocks.get(key);
+  if (current?.token === token) roomLocks.delete(key);
+}
+
+async function withRoomMutationLock(roomId, fn, options = {}) {
+  const roomIdValue = String(roomId || '').trim();
+  if (!roomIdValue) throw new Error('roomId required');
+
+  const waitMs = Number(options.waitMs || ROOM_LOCK_WAIT_MS);
+  const ttlMs = Number(options.ttlMs || ROOM_LOCK_TTL_MS);
+  const pollMs = Number(options.pollMs || ROOM_LOCK_POLL_MS);
+  const token = randomUUID();
+  const start = Date.now();
+
+  while ((Date.now() - start) <= waitMs) {
+    if (await tryAcquireRoomLock(roomIdValue, token, ttlMs)) {
+      try {
+        return await fn();
+      } finally {
+        await releaseRoomLock(roomIdValue, token);
+      }
+    }
+    await sleep(pollMs);
+  }
+
+  const err = new Error('room busy');
+  err.code = 'ROOM_BUSY';
+  throw err;
+}
+
+function normalizePresence(raw) {
+  const lastSeen = raw && typeof raw === 'object' && raw.lastSeen && typeof raw.lastSeen === 'object'
+    ? raw.lastSeen
+    : {};
+  return {
+    lastSeen: Object.fromEntries(
+      Object.entries(lastSeen)
+        .map(([agentId, ts]) => [String(agentId || '').trim(), Number(ts || 0)])
+        .filter(([agentId, ts]) => agentId && Number.isFinite(ts) && ts > 0)
+    ),
+  };
+}
+
+function normalizeLegacyRoom(room, roomIdValue) {
+  if (!room || typeof room !== 'object') return null;
+  return {
+    ...room,
+    roomId: room.roomId || roomIdValue,
+    agents: Array.isArray(room.agents) ? room.agents.map(String) : [],
+    game: room.game || null,
+    finalGame: room.finalGame || null,
+    finalGameAt: room.finalGameAt || null,
+    endedBy: room.endedBy || null,
+    lastSeen: room.lastSeen && typeof room.lastSeen === 'object' ? room.lastSeen : {},
+  };
+}
+
 async function getRoom(roomId) {
   const roomIdValue = String(roomId || '').trim();
   if (!roomIdValue) return null;
-  const nextKey = keyOf(PREFIX, roomIdValue);
-  const current = await getByKey(nextKey);
+
+  const meta = await getByCandidates(roomMetaKeys(roomIdValue));
+  if (meta && typeof meta === 'object') {
+    const [game, finalState, presence] = await Promise.all([
+      getByCandidates(roomGameKeys(roomIdValue)),
+      getByCandidates(roomFinalKeys(roomIdValue)),
+      getByCandidates(roomPresenceKeys(roomIdValue)),
+    ]);
+    const normalizedPresence = normalizePresence(presence);
+    return {
+      roomId: roomIdValue,
+      ownerId: meta.ownerId,
+      agents: Array.isArray(meta.agents) ? meta.agents.map(String) : [],
+      game: game || null,
+      finalGame: finalState?.finalGame || null,
+      finalGameAt: finalState?.finalGameAt || null,
+      endedBy: finalState?.endedBy || null,
+      createdAt: meta.createdAt || null,
+      updatedAt: meta.updatedAt || null,
+      lastSeen: normalizedPresence.lastSeen,
+    };
+  }
+
+  return normalizeLegacyRoom(await getByCandidates(roomKeys(roomIdValue)), roomIdValue);
+}
+
+async function setRoom(roomId, room, options = {}) {
+  const roomIdValue = String(roomId || '').trim();
+  if (!roomIdValue || !room || typeof room !== 'object') return;
+
+  const includePresence = !!options.includePresence;
+  const meta = {
+    roomId: roomIdValue,
+    ownerId: room.ownerId || null,
+    agents: Array.isArray(room.agents) ? room.agents.map(String) : [],
+    createdAt: room.createdAt || null,
+    updatedAt: room.updatedAt || Date.now(),
+  };
+
+  await setStructuredValue(roomMetaKeys(roomIdValue), meta, ROOM_TTL_SEC);
+
+  if (room.game != null) await setStructuredValue(roomGameKeys(roomIdValue), room.game, ROOM_TTL_SEC);
+  else await deleteStructuredValue(roomGameKeys(roomIdValue));
+
+  if (room.finalGame || room.finalGameAt || room.endedBy) {
+    await setStructuredValue(roomFinalKeys(roomIdValue), {
+      finalGame: room.finalGame || null,
+      finalGameAt: room.finalGameAt || null,
+      endedBy: room.endedBy || null,
+    }, ROOM_TTL_SEC);
+  } else {
+    await deleteStructuredValue(roomFinalKeys(roomIdValue));
+  }
+
+  if (includePresence) {
+    await replaceRoomPresence(roomIdValue, room.lastSeen || {});
+  }
+}
+
+async function getRoomPresence(roomId) {
+  const roomIdValue = String(roomId || '').trim();
+  if (!roomIdValue) return { lastSeen: {} };
+
+  const raw = await getByCandidates(roomPresenceKeys(roomIdValue));
+  if (raw) return normalizePresence(raw);
+
+  const legacyRoom = normalizeLegacyRoom(await getByCandidates(roomKeys(roomIdValue)), roomIdValue);
+  return normalizePresence({ lastSeen: legacyRoom?.lastSeen || {} });
+}
+
+async function replaceRoomPresence(roomId, lastSeen = {}) {
+  const roomIdValue = String(roomId || '').trim();
+  if (!roomIdValue) return { lastSeen: {} };
+  const normalized = normalizePresence({ lastSeen });
+  await setStructuredValue(roomPresenceKeys(roomIdValue), normalized, PRESENCE_TTL_SEC);
+  return normalized;
+}
+
+async function touchRoomPresence(roomId, agentId, now = Date.now()) {
+  const roomIdValue = String(roomId || '').trim();
+  const agentKey = String(agentId || '').trim();
+  if (!roomIdValue || !agentKey) return getRoomPresence(roomIdValue);
+  const current = await getRoomPresence(roomIdValue);
+  current.lastSeen[agentKey] = now;
+  await replaceRoomPresence(roomIdValue, current.lastSeen);
   return current;
 }
 
-async function setRoom(roomId, room) {
-  const key = keyOf(PREFIX, roomId);
-  if (hasKV()) {
-    await tryKV(() => kv.set(key, room, { ex: 60 * 60 * 24 }), () => mem.set(key, room));
-    return;
+async function deleteRoomData(roomId) {
+  const roomIdValue = String(roomId || '').trim();
+  if (!roomIdValue) return;
+  await Promise.all([
+    deleteStructuredValue(roomKeys(roomIdValue)),
+    deleteStructuredValue(roomMetaKeys(roomIdValue)),
+    deleteStructuredValue(roomGameKeys(roomIdValue)),
+    deleteStructuredValue(roomFinalKeys(roomIdValue)),
+    deleteStructuredValue(roomPresenceKeys(roomIdValue)),
+  ]);
+}
+
+function collectMemRooms() {
+  const byRoomId = new Map();
+  const validPrefixes = [
+    `${namespaced(ROOM_PREFIX, APP_NAMESPACE)}:`,
+    `${namespaced(ROOM_PREFIX, LEGACY_NAMESPACE)}:`,
+    `${namespaced(ROOM_META_PREFIX, APP_NAMESPACE)}:`,
+    `${namespaced(ROOM_META_PREFIX, LEGACY_NAMESPACE)}:`,
+  ];
+  for (const [key, value] of mem.entries()) {
+    if (!validPrefixes.some((prefix) => key.startsWith(prefix)) || !value?.roomId || byRoomId.has(value.roomId)) continue;
+    const room = value.game !== undefined || value.finalGame !== undefined || value.lastSeen !== undefined
+      ? normalizeLegacyRoom(value, value.roomId)
+      : null;
+    if (room) {
+      byRoomId.set(room.roomId, room);
+      continue;
+    }
+    byRoomId.set(value.roomId, null);
   }
-  mem.set(key, room);
+  return [...byRoomId.keys()];
+}
+
+async function listRoomKeys() {
+  if (!hasKV() || typeof kv.keys !== 'function') return [];
+  // Read both namespaces until all live rooms have been rewritten under the new prefix.
+  const keyGroups = await Promise.all([
+    kv.keys(roomPattern(ROOM_META_PREFIX, APP_NAMESPACE)),
+    kv.keys(roomPattern(ROOM_META_PREFIX, LEGACY_NAMESPACE)),
+    kv.keys(roomPattern(ROOM_PREFIX, APP_NAMESPACE)),
+    kv.keys(roomPattern(ROOM_PREFIX, LEGACY_NAMESPACE)),
+  ]);
+  return keyGroups.flatMap((keys) => (Array.isArray(keys) ? keys : []));
 }
 
 async function listRooms() {
   if (hasKV() && typeof kv.keys === 'function') {
     return tryKV(async () => {
-      const keys = await kv.keys(`${PREFIX}*`);
-      const mergedKeys = Array.isArray(keys) ? keys : [];
+      const mergedKeys = await listRoomKeys();
       if (mergedKeys.length === 0) return [];
       const rows = await Promise.all(mergedKeys.map((k) => kv.get(k)));
-      const byRoomId = new Map();
-      rows.filter(Boolean).forEach((room) => {
-        if (room?.roomId && !byRoomId.has(room.roomId)) byRoomId.set(room.roomId, room);
+      const roomIds = new Set();
+      rows.filter(Boolean).forEach((row) => {
+        if (row?.roomId) roomIds.add(row.roomId);
       });
-      return [...byRoomId.values()];
-    }, () => {
-      const byRoomId = new Map();
-      for (const [key, value] of mem.entries()) {
-        if (key.startsWith(PREFIX) && value?.roomId && !byRoomId.has(value.roomId)) {
-          byRoomId.set(value.roomId, value);
-        }
-      }
-      return [...byRoomId.values()];
-    });
+      return (await Promise.all([...roomIds].map((roomId) => getRoom(roomId)))).filter(Boolean);
+    }, async () => (await Promise.all(collectMemRooms().map((roomId) => getRoom(roomId)))).filter(Boolean));
   }
 
-  const byRoomId = new Map();
-  for (const [key, value] of mem.entries()) {
-    if (key.startsWith(PREFIX) && value?.roomId && !byRoomId.has(value.roomId)) {
-      byRoomId.set(value.roomId, value);
-    }
-  }
-  return [...byRoomId.values()];
+  return (await Promise.all(collectMemRooms().map((roomId) => getRoom(roomId)))).filter(Boolean);
 }
 
 async function clearRoomsByOwner(ownerId) {
@@ -75,18 +344,25 @@ async function clearRoomsByOwner(ownerId) {
 
   if (hasKV() && typeof kv.keys === 'function') {
     return tryKV(async () => {
-      const keys = await kv.keys(`${PREFIX}*`);
-      const mergedKeys = Array.isArray(keys) ? keys : [];
+      const mergedKeys = await listRoomKeys();
       if (mergedKeys.length === 0 || typeof kv.del !== 'function') return { ok: true, cleared: 0, backend: 'kv' };
       const rows = await Promise.all(mergedKeys.map((k) => kv.get(k)));
-      const delKeys = mergedKeys.filter((_, i) => rows[i]?.ownerId === owner);
-      if (delKeys.length) await kv.del(...delKeys);
-      return { ok: true, cleared: delKeys.length, backend: 'kv' };
+      const roomIds = [...new Set(rows.filter(Boolean).map((row) => row.roomId).filter(Boolean))];
+      let cleared = 0;
+      for (const roomId of roomIds) {
+        const room = await getRoom(roomId);
+        if (room?.ownerId === owner) {
+          await deleteRoomData(roomId);
+          cleared += 1;
+        }
+      }
+      return { ok: true, cleared, backend: 'kv' };
     }, async () => {
       let cleared = 0;
-      for (const [key, value] of mem.entries()) {
-        if (key.startsWith(PREFIX) && value?.ownerId === owner) {
-          mem.delete(key);
+      for (const roomId of collectMemRooms()) {
+        const room = await getRoom(roomId);
+        if (room?.ownerId === owner) {
+          await deleteRoomData(roomId);
           cleared += 1;
         }
       }
@@ -95,9 +371,10 @@ async function clearRoomsByOwner(ownerId) {
   }
 
   let cleared = 0;
-  for (const [key, value] of mem.entries()) {
-    if (key.startsWith(PREFIX) && value?.ownerId === owner) {
-      mem.delete(key);
+  for (const roomId of collectMemRooms()) {
+    const room = await getRoom(roomId);
+    if (room?.ownerId === owner) {
+      await deleteRoomData(roomId);
       cleared += 1;
     }
   }
@@ -127,20 +404,27 @@ async function clearInactiveRooms(timeoutMs = INACTIVE_TIMEOUT_MS) {
 
   if (hasKV() && typeof kv.keys === 'function') {
     return tryKV(async () => {
-      const keys = await kv.keys(`${PREFIX}*`);
-      const mergedKeys = Array.isArray(keys) ? keys : [];
+      const mergedKeys = await listRoomKeys();
       if (mergedKeys.length === 0 || typeof kv.del !== 'function') {
         return { ok: true, cleared: 0, backend: 'kv' };
       }
       const rows = await Promise.all(mergedKeys.map((k) => kv.get(k)));
-      const delKeys = mergedKeys.filter((_, i) => isInactive(rows[i]));
-      if (delKeys.length) await kv.del(...delKeys);
-      return { ok: true, cleared: delKeys.length, backend: 'kv' };
+      const roomIds = [...new Set(rows.filter(Boolean).map((row) => row.roomId).filter(Boolean))];
+      let cleared = 0;
+      for (const roomId of roomIds) {
+        const room = await getRoom(roomId);
+        if (isInactive(room)) {
+          await deleteRoomData(roomId);
+          cleared += 1;
+        }
+      }
+      return { ok: true, cleared, backend: 'kv' };
     }, async () => {
       let cleared = 0;
-      for (const [key, value] of mem.entries()) {
-        if (key.startsWith(PREFIX) && isInactive(value)) {
-          mem.delete(key);
+      for (const roomId of collectMemRooms()) {
+        const room = await getRoom(roomId);
+        if (isInactive(room)) {
+          await deleteRoomData(roomId);
           cleared += 1;
         }
       }
@@ -149,9 +433,10 @@ async function clearInactiveRooms(timeoutMs = INACTIVE_TIMEOUT_MS) {
   }
 
   let cleared = 0;
-  for (const [key, value] of mem.entries()) {
-    if (key.startsWith(PREFIX) && isInactive(value)) {
-      mem.delete(key);
+  for (const roomId of collectMemRooms()) {
+    const room = await getRoom(roomId);
+    if (isInactive(room)) {
+      await deleteRoomData(roomId);
       cleared += 1;
     }
   }
@@ -161,33 +446,44 @@ async function clearInactiveRooms(timeoutMs = INACTIVE_TIMEOUT_MS) {
 async function clearAllRooms() {
   if (hasKV() && typeof kv.keys === 'function') {
     return tryKV(async () => {
-      const keys = await kv.keys(`${PREFIX}*`);
-      const mergedKeys = Array.isArray(keys) ? keys : [];
-      if (mergedKeys.length > 0 && typeof kv.del === 'function') {
-        await kv.del(...mergedKeys);
-        return { ok: true, cleared: mergedKeys.length, backend: 'kv' };
+      const mergedKeys = await listRoomKeys();
+      const rows = await Promise.all(mergedKeys.map((k) => kv.get(k)));
+      const roomIds = [...new Set(rows.filter(Boolean).map((row) => row.roomId).filter(Boolean))];
+      if (roomIds.length > 0) {
+        for (const roomId of roomIds) {
+          await deleteRoomData(roomId);
+        }
+        return { ok: true, cleared: roomIds.length, backend: 'kv' };
       }
       return { ok: true, cleared: 0, backend: 'kv' };
     }, async () => {
       let cleared = 0;
-      for (const key of mem.keys()) {
-        if (key.startsWith(PREFIX)) {
-          mem.delete(key);
-          cleared += 1;
-        }
+      for (const roomId of collectMemRooms()) {
+        await deleteRoomData(roomId);
+        cleared += 1;
       }
       return { ok: true, cleared, backend: 'mem' };
     });
   }
 
   let cleared = 0;
-  for (const key of mem.keys()) {
-    if (key.startsWith(PREFIX)) {
-      mem.delete(key);
-      cleared += 1;
-    }
+  for (const roomId of collectMemRooms()) {
+    await deleteRoomData(roomId);
+    cleared += 1;
   }
   return { ok: true, cleared, backend: 'mem' };
 }
 
-module.exports = { getRoom, setRoom, listRooms, clearRoomsByOwner, clearInactiveRooms, clearAllRooms, hasKV };
+module.exports = {
+  getRoom,
+  setRoom,
+  listRooms,
+  clearRoomsByOwner,
+  clearInactiveRooms,
+  clearAllRooms,
+  getRoomPresence,
+  replaceRoomPresence,
+  touchRoomPresence,
+  withRoomMutationLock,
+  hasKV,
+};

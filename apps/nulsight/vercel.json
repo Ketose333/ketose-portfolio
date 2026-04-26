@@ -3,7 +3,6 @@
   "routes": [
     { "handle": "filesystem" },
     { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/legacy/(.*)", "dest": "/legacy/$1" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

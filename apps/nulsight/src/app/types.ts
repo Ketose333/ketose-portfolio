@@ -1,13 +1,4 @@
-export interface AuthUser {
-  username: string
-  displayName?: string
-}
-
-export interface AuthResponse {
-  ok: boolean
-  error?: string
-  user?: AuthUser
-}
+export type { AuthResponse, AuthUser } from '@portfolio/account-client'
 
 export interface RoomStateResponse {
   ok: boolean

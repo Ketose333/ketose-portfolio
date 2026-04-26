@@ -1,0 +1,338 @@
+@import url('/fonts.css');
+@import url('/theme.css');
+@import url('/palette.css');
+
+:root {
+  --grid-size: var(--theme-page-grid-size);
+  --grid-line: var(--theme-page-grid-line);
+  --radius: 0px;
+  --radius2: 0px;
+  --r-sm: 0px;
+  --r-lg: 0px;
+  --focus-ring: var(--c-focus-ring);
+  --focus-ring-2: var(--c-focus-ring-2);
+  --fs-hero: clamp(30px, 3.2vw, 46px);
+  --fs-h1: clamp(24px, 2.3vw, 34px);
+  --fs-h2: clamp(18px, 1.55vw, 23px);
+  --fs-body: 15px;
+  --fs-min-readable: 14px;
+  --fs-meta: var(--fs-min-readable);
+  --sp-1: 2px;
+  --sp-2: 4px;
+  --sp-3: 6px;
+  --sp-4: 8px;
+  --sp-5: 10px;
+  --sp-6: 12px;
+  --sp-7: 14px;
+  --sp-8: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body,
+button,
+a,
+.panel,
+.slot,
+.hand-card,
+.utility-zone,
+.grave-card {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+img,
+a {
+  -webkit-user-drag: none;
+}
+
+input,
+textarea,
+[contenteditable='true'],
+#roomCode,
+.code-big,
+.allow-select {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+body {
+  margin: 0;
+  color: var(--c-text);
+  font-family: var(--theme-font-sans);
+  font-size: var(--fs-body);
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--theme-bg);
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -2;
+  background: var(--theme-page-background);
+  background-size: var(--theme-page-background-size);
+}
+
+#site-header,
+#site-footer {
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.space-between {
+  justify-content: space-between;
+}
+
+.mt8 {
+  margin-top: 8px;
+}
+
+.mt10 {
+  margin-top: 10px;
+}
+
+.mb6 {
+  margin-bottom: 6px;
+}
+
+.lh15 {
+  line-height: 1.5;
+}
+
+.w100 {
+  width: 100%;
+}
+
+.hint {
+  color: var(--c-text-soft);
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+a {
+  color: var(--c-text-strong);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+a:hover {
+  color: var(--c-text-strong);
+}
+
+a:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 0;
+}
+
+.muted {
+  font-size: var(--fs-meta);
+  color: var(--c-text-soft);
+}
+
+.row {
+  display: flex;
+  gap: var(--sp-4);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.t-display,
+.t-title,
+.t-section {
+  font-family: var(--theme-font-display);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.bp-card__text,
+.card-overlay__effect,
+.deck-card__effect {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-break: strict;
+  text-wrap: pretty;
+}
+
+.bp-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--sp-3);
+  padding: 8px;
+  overflow: hidden;
+  border: 1px solid var(--theme-border-strong);
+  background: var(--theme-panel-fill-raised);
+}
+
+.bp-card__chrome {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 8%, transparent), transparent 26%),
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-text) 8%, transparent), transparent 42%);
+  opacity: var(--theme-alpha-strong);
+}
+
+.bp-card--unit {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-panel-strong) 88%, white 12%), color-mix(in srgb, var(--theme-bg-elevated) 90%, #14285f 10%));
+}
+
+.bp-card--spell {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-panel-strong) 88%, white 12%), color-mix(in srgb, var(--theme-bg-elevated) 90%, #264b4b 10%));
+}
+
+.bp-card__head,
+.bp-card__foot {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.bp-card__cost,
+.bp-card__type,
+.bp-card__footer {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 6px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-strong) 75%, transparent);
+  background: var(--theme-panel-fill-flat);
+  color: var(--theme-text);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.03em;
+}
+
+.bp-card__body {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: var(--sp-2);
+  min-height: 0;
+}
+
+.bp-card__name {
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.15;
+  color: var(--theme-text);
+  word-break: keep-all;
+  overflow-wrap: normal;
+  line-break: strict;
+}
+
+.bp-card__meta {
+  min-height: 18px;
+  color: var(--theme-subtle);
+  font-size: 11px;
+  line-height: 1.25;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-break: strict;
+}
+
+.bp-card__meta--empty {
+  opacity: var(--theme-alpha-disabled);
+}
+
+.bp-card__text {
+  color: var(--theme-text);
+  font-size: 11.5px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bp-card--zone .bp-card__text {
+  -webkit-line-clamp: 4;
+}
+
+.ui-page-title {
+  font-family: var(--theme-font-display);
+  font-size: clamp(20px, 1.8vw, 24px);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.t-display {
+  font-size: var(--fs-hero);
+  font-weight: 700;
+  line-height: 1.05;
+}
+
+.t-title {
+  font-size: var(--fs-h1);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.t-section {
+  font-size: var(--fs-h2);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.bp-loading__spinner {
+  width: 24px;
+  height: 24px;
+  margin: 0 auto 10px;
+  border-radius: 0;
+  border: 3px solid var(--c-line-soft);
+  border-top-color: var(--p-accent-blue-soft);
+  animation: bp-spin .8s linear infinite;
+}
+
+@keyframes bp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

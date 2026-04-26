@@ -155,7 +155,7 @@ export function UiOverlayProvider({ children }: PropsWithChildren) {
 
       <ActionDialog
         open={dialog.open}
-        kicker={dialog.mode === 'prompt' ? 'INPUT' : 'NOTICE'}
+        kicker={dialog.mode === 'prompt' ? '입력' : '알림'}
         title={dialog.title}
         description={dialog.text}
         confirmLabel={dialog.mode === 'alert' ? '확인' : dialog.mode === 'confirm' ? '확인' : '입력'}

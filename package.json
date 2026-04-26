@@ -3,15 +3,18 @@
   "private": true,
   "version": "0.1.0",
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
+    "verify": "npm run check && npm run build",
+    "check": "npm run check:theme && npm run check:nulsight-ui",
     "build:theme": "node scripts/build-theme-css.mjs",
     "check:nulsight-ui": "node scripts/check-nulsight-style-boundaries.mjs",
-    "dev:site": "npm run build:theme && npm run dev --workspace @portfolio/site",
-    "dev:nulsight": "npm run build:theme && npm run dev --workspace @portfolio/nulsight",
-    "build:site": "npm run build:theme && npm run build --workspace @portfolio/site",
-    "build:nulsight": "npm run build:theme && npm run check:nulsight-ui && npm run build --workspace @portfolio/nulsight",
+    "dev:site": "npm run dev --workspace @portfolio/site",
+    "dev:nulsight": "npm run dev --workspace @portfolio/nulsight",
+    "build:site": "npm run build --workspace @portfolio/site",
+    "build:nulsight": "npm run build --workspace @portfolio/nulsight",
     "check:theme": "node scripts/check-theme-tokens.mjs"
   }
 }

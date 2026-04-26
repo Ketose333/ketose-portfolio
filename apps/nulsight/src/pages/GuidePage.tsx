@@ -1,10 +1,16 @@
 import { getSharedCardsGlobal } from '../app/globals'
+import { NulsightPageFrame } from '../app/components/NulsightPageFrame'
+import { NulsightPanel } from '../app/components/NulsightPanel'
 
 const guideSections = [
   {
     id: 'g1',
     title: '1) 턴/페이즈',
-    body: ['드로우 → 메인 → 배틀 → 엔드 순서로 진행됩니다.', '선공 첫 턴에는 배틀이 열리지 않습니다.'],
+    body: [
+      '드로우 → 메인 → 배틀 → 엔드 순서로 진행됩니다.',
+      '선공 첫 턴에는 배틀이 열리지 않습니다.',
+      '드로우와 엔드는 열린 행동이 없으면 빠르게 다음 구간으로 넘어갑니다.',
+    ],
   },
   {
     id: 'g2',
@@ -14,6 +20,7 @@ const guideSections = [
       '유닛 공격: 내 유닛을 선택한 뒤 상대 유닛을 클릭합니다.',
       '본체 공격: 내 유닛을 선택한 뒤 본체 공격 버튼을 누릅니다.',
       '항복: 항복 버튼을 누르면 즉시 패배 처리됩니다.',
+      '우선권 패스: 체인이나 열린 창이 있으면 상대에게 응답 순서를 넘깁니다.',
     ],
   },
 ] as const
@@ -55,32 +62,55 @@ export function GuidePage() {
   const keywordCatalog = shared?.buildKeywordCatalog?.() || []
 
   return (
-    <main className="nulsight-shell nulsight-shell--reading">
+    <NulsightPageFrame className="nulsight-shell nulsight-shell--reading" width="reading">
       <section className="nulsight-page-main">
-        <section className="nulsight-panel nulsight-panel--compact" aria-label="기본 규칙">
-          <div className="nulsight-panel__head">
-            <p className="nulsight-kicker">GUIDE</p>
-            <h1 className="nulsight-section-title">기본 규칙</h1>
+        <NulsightPanel
+          ariaLabel="기본 규칙"
+          compact
+          eyebrow="가이드"
+          title="듀얼 가이드"
+          titleAs="h1"
+          description={
+            <p className="nulsight-copy nulsight-copy--tight">
+              턴 순서, 조작, 키워드만 빠르게 확인합니다.
+            </p>
+          }
+        >
+          <div className="nulsight-band-list nulsight-band-list--guide">
+            <article className="nulsight-band">
+              <span className="nulsight-band__label">페이즈</span>
+              <strong className="nulsight-band__value">드로우 → 메인 → 배틀 → 엔드</strong>
+            </article>
+            <article className="nulsight-band">
+              <span className="nulsight-band__label">조작</span>
+              <strong className="nulsight-band__value">손패 선택 후 목표 슬롯/대상 클릭</strong>
+            </article>
+            <article className="nulsight-band">
+              <span className="nulsight-band__label">키워드</span>
+              <strong className="nulsight-band__value">{keywordCatalog.length ? `${keywordCatalog.length}개` : '불러오는 중'}</strong>
+            </article>
           </div>
-        </section>
+        </NulsightPanel>
 
-        {guideSections.map((section) => (
-          <article className="nulsight-panel guide-card" id={section.id} key={section.id}>
-            <div className="guide-card__title">{section.title}</div>
-            <div className="guide-bullets">
-              {section.body.map((line) => (
-                <div className="bullet" key={line}>
-                  <span className="bullet-dot" aria-hidden="true" />
-                  <div className="muted lh15">{line}</div>
-                </div>
-              ))}
-            </div>
-          </article>
-        ))}
+        <section className="nulsight-guide-grid">
+          {guideSections.map((section) => (
+            <article className="nulsight-panel guide-card" id={section.id} key={section.id}>
+              <div className="guide-card__title">{section.title}</div>
+              <div className="guide-bullets">
+                {section.body.map((line) => (
+                  <div className="bullet" key={line}>
+                    <span className="bullet-dot" aria-hidden="true" />
+                    <div className="muted lh15">{line}</div>
+                  </div>
+                ))}
+              </div>
+            </article>
+          ))}
+        </section>
 
         <article className="nulsight-panel guide-card" id="g3">
           <div className="guide-card__title">3) 키워드 문법</div>
-          <div className="guide-bullets">
+          <div className="guide-bullets guide-bullets--catalog">
             {keywordCatalog.length ? (
               keywordCatalog.map((entry) => (
                 <div className="bullet" key={entry.name}>
@@ -97,6 +127,6 @@ export function GuidePage() {
           </div>
         </article>
       </section>
-    </main>
+    </NulsightPageFrame>
   )
 }
