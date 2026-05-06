@@ -1,43 +1,25 @@
 # Branding
 
-This directory is the shared branding workspace for the portfolio monorepo.
+포트폴리오 모노레포의 문체와 시각 기준을 관리하는 폴더입니다. 앱별 구현보다 오래 유지되어야 하는 결정만 이곳에 둡니다.
 
-Use it for decisions that should outlive a single app implementation:
+## Boundary
 
-- brand context and design principles
-- portfolio/site positioning
-- UI copy and decorative-text rules
-- color, typography, motion, and layout direction
-- screenshots or notes that help future collaborators understand the intended taste
+이 폴더는 `ketose-portfolio` 레포 안에서 구현되는 site, NULSIGHT의 문체와 시각 기준만 다룹니다.
 
-## Canonical Files
+사람 자체의 의미 브랜딩, 닉네임/핸들 탐색, 장기적인 자기 설명 문서는 이 레포의 범위에 두지 않습니다. 이 레포에는 화면 구현, 카피, 테마, 프로젝트 표시 순서에 직접 영향을 주는 기준만 남깁니다.
 
-- `brand-context.md`
-  - high-level project personality, audience, visual direction, and app-specific guidance
-- `ui-copy-guardrails.md`
-- `site-direction.md`
-  - current direction for the public portfolio site
-- `theme-principles.md`
-  - confirmed dark-mode foundation and color/motion rules
+## Files
 
-Repo-local docs can point here, but the working source of truth should live in this folder when a document is about branding rather than implementation.
+- `brand-context.md`: 전체 브랜드 맥락, 대상, 시각 방향
+- `site-direction.md`: 공개 포트폴리오 사이트의 역할과 표시 순서
+- `ui-copy-guardrails.md`: 장식성 문구, 한국어 줄바꿈, 버튼/링크 문체 기준
+- `theme-principles.md`: 다크 모드, 색상, 모션 기준
+- `project-timeline.md`: 프로젝트 날짜 라벨의 기준
 
-## Current Baseline
+## Baseline
 
-
-- All live surfaces are dark-mode-first.
-- Shared surfaces should use repository theme tokens before app-local styling.
-- Decorative copy is not allowed unless it explains a real action, state, rule, or link.
-- Site is an accessible work index with restrained web-tech demonstrations, not a synthetic landing page.
-- Long-term visual direction is industrial neo-brutalism with Nothing-inspired signal design.
-
-If a change needs a new color, new motion pattern, new persistent HUD block, or new slogan-like phrase, update the relevant branding file first.
-
-## Visual Language Shortcut
-
-Current flat UI is the foundation, not the final personality.
-
-- Keep the flat base for readability, performance, and layout discipline.
-- Add neo-brutalism through hard structure, visible borders, direct hierarchy, and honest controls.
-- Add Nothing influence through exposed layers, narrow palette, monochrome restraint, and signal-like interactive details.
-- Do not copy Nothing's product UI literally. Borrow the logic: recognizable structure, functional glyph-like signals, and deliberate restraint.
+- 라이브 화면은 다크 모드를 기준으로 설계합니다.
+- 색상과 표면은 공통 테마 토큰을 먼저 사용합니다.
+- 장식성 문구보다 실제 링크, 상태, 작업 증거를 우선합니다.
+- 사이트는 자기소개형 랜딩 페이지가 아니라 검증 가능한 작업 인덱스입니다.
+- 새 색상, 새 문체, 새 고정 UI 패턴이 필요하면 관련 기준 문서를 먼저 갱신합니다.

@@ -244,7 +244,7 @@ export function LobbyPage() {
         <div className="nulsight-page-main">
           <NulsightPanel
             className="nulsight-panel--hero"
-            eyebrow="대기실"
+            eyebrow="매치 준비"
             titleAs="h1"
             title="대기실"
             description={

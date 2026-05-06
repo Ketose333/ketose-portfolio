@@ -67,7 +67,7 @@ export function GuidePage() {
         <NulsightPanel
           ariaLabel="기본 규칙"
           compact
-          eyebrow="가이드"
+          eyebrow="규칙"
           title="듀얼 가이드"
           titleAs="h1"
           description={

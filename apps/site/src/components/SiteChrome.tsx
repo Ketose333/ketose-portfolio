@@ -22,7 +22,7 @@ export function SiteChrome({ children }: PropsWithChildren) {
       brand={
         <a className="ui-shell-chrome__brand site-shell__brand" href="/">
           <span className="ui-shell-chrome__eyebrow">Ketose</span>
-          <strong className="ui-shell-chrome__title">작업 인덱스</strong>
+          <strong className="ui-shell-chrome__title">프론트엔드 작업</strong>
         </a>
       }
       context={null}
@@ -51,7 +51,7 @@ export function SiteChrome({ children }: PropsWithChildren) {
       footer={
         <>
           <div className="ui-shell-chrome__footer-note">
-            <p className="ui-shell-chrome__footer-copy">라이브 앱과 GitHub 저장소</p>
+            <p className="ui-shell-chrome__footer-copy">라이브 웹과 GitHub 저장소</p>
           </div>
           <div className="ui-shell-chrome__footer-links">
             {portfolioProjectServices.map((service) => (

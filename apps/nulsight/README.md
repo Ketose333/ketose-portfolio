@@ -1,60 +1,38 @@
 # NULSIGHT
 
-`NULSIGHT` lives inside the portfolio monorepo as a single React/Vite surface with bundled browser/runtime assets.
+상태 흐름이 많은 화면을 React/Vite로 구성한 인터랙티브 웹 앱입니다. 로비, 덱 편집, 덱 허브, 진행 화면을 하나의 React 표면에서 관리합니다.
 
-## Read This First
+## Live
 
-- `docs/structure.md`
-- `docs/rules.md`
-- root `docs/project-guide.md`
-- root `branding/ui-copy-guardrails.md`
+- https://nulsight.vercel.app
 
-If you are joining mid-stream, treat `lib/auth-service.js` and `lib/storage-config.js` as the app-local entry points for server concerns.
+## Run
 
-## Directory roles
+루트 디렉터리에서 실행합니다.
 
-- `src/`
-  - current React app, route shell, page surfaces, client state
-- `src/shared/`
-  - gameplay constants and shared card data source
-- `src/client/globals/`, `src/client/game/`, `src/client/audio/`
-  - TypeScript sources that are bundled into browser globals under `public/js`
-  - React `/game` also uses `src/client/game/runtimeBridges.ts` to install the small globals it still needs without extra script tags
-  - page-level HUD and surface defaults now live in `src/client/game/surfaceState.ts`, and bridge-only runtime helpers live under `src/client/game/runtime/`
-  - `src/client/game/runtime/gameRuntime.js` is the source for the generated `public/js/game.js` runtime
-- `src/server/generated/`
-  - Node-friendly generated entry points bundled into `lib/generated`
-- `public/`
-  - deploy-time static assets, CSS, generated browser globals, audio
-- `src/styles/`
-  - React route styles for shared shell, guide, deck, and deck hub surfaces
-- `lib/auth-service.js`, `lib/storage-config.js`
-  - thin NULSIGHT-specific wrappers over shared server packages for account/session and KV namespace configuration
-- `lib/deck-store.js`, `lib/deck-hub-store.js`, `lib/store.js`
-  - game-specific persistence layers that sit on top of the shared storage wrapper
-- `public/game.css`
-  - duel runtime stylesheet loaded only by the React `/game` route
-- `docs/`
-  - human-facing rules and structure notes
-- `dist-check/`
-  - ignored local verification build output used for screenshot audits
+```bash
+npm run dev:nulsight
+npm run build:nulsight
+```
 
-## Build flow
+앱 내부 점검:
 
-- `npm run build`
-  - builds shared palette/theme assets, generated browser/server bundles, then the production Vite app
-- `npm run build:verify`
-  - same pipeline, but writes the Vite app to `dist-check/` for local Playwright overlay checks
+```bash
+npm run build:verify --workspace @portfolio/nulsight
+```
 
-## Working Notes
+## Role
 
-- Prefer moving reusable server concerns into `packages/` before adding more app-local helpers.
-- Keep runtime compatibility comments when touching persistence, because KV keys still read legacy aliases during migration.
-- Remove old paths only after confirming both the app build and the Playwright audit pass.
-- Destructive maintenance endpoints such as global room/deck clears should stay gated behind `PORTFOLIO_MAINTENANCE_TOKEN`; they are not meant to be available to ordinary authenticated players.
+- `src/pages`: 라우트 단위 화면
+- `src/app`: 라우터, 공통 컴포넌트, API 클라이언트
+- `src/client`: 브라우저 런타임, 오디오, 화면 상태
+- `src/shared`: 카드 데이터와 공통 규칙
+- `api`: Vercel Functions 엔드포인트
+- `lib`: 저장소, 인증, 게임 상태 처리
+- `docs`: 구조와 규칙 문서
 
-## Shared assets
+## Notes
 
-- neutral theme source: `themes/theme.oklch.css`
-- local palette source: `apps/nulsight/public/palette.oklch.css`
-- audio assets: `apps/nulsight/public/audio/bgm`, `apps/nulsight/public/audio/sfx`
+- 계정과 저장소 공통 로직은 `packages/`의 서버 패키지를 우선 사용합니다.
+- 브라우저 전역 런타임은 빌드 스크립트로 생성해 `public/js`에 둡니다.
+- 파괴적인 관리 기능은 환경 변수로 보호합니다.

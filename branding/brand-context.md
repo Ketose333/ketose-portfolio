@@ -9,6 +9,8 @@
 
 The portfolio should not feel like a generic developer landing page. It should feel like the work of a game-minded builder who cares about interaction quality, UI judgment, and shipping real projects.
 
+This file only records repo-local brand decisions that affect the portfolio and app surfaces.
+
 ## Target Audience
 
 - Recruiters and interviewers who need to understand the work quickly
@@ -22,7 +24,7 @@ The portfolio should not feel like a generic developer landing page. It should f
 - Jump into a playable build without hunting for links
 - Recognize that UI/UX decisions are intentional, not template-driven
 
-## Brand Personality
+## Portfolio Personality
 
 Three anchor words:
 
@@ -55,20 +57,20 @@ These decisions are active until this folder is updated:
 
 ## Long-Term Visual Language
 
-The intended direction is industrial neo-brutalism with Nothing-inspired signal design.
+The intended direction is a dark, structural portfolio surface that makes the shipped work easy to inspect.
 
 This means:
 
 - flat surfaces remain the base layer for clarity and implementation stability
-- neo-brutalism adds blunt structure: visible borders, hard panels, strong typographic hierarchy, exposed layout mechanics
-- Nothing influence adds restraint: narrow palette, monochrome-first surfaces, transparent/layered thinking, signal-like UI details
+- visible borders, hard panels, and strong typographic hierarchy expose real layout structure
+- narrow palettes and high-contrast states support scanning, focus, and route selection
 - the result should feel built, inspectable, and playable, not decorative or template-smooth
 
-Borrow:
+Use:
 
 - exposed structure
 - graphic recognizability
-- useful signal systems
+- useful state systems
 - confident negative space
 - high-contrast interactive states
 
@@ -76,9 +78,9 @@ Avoid:
 
 - faux terminal dashboards
 - random pixel/dot decoration
-- saturated neo-brutalist toy colors
-- brutalism that harms readability
-- copying Nothing's exact dot-matrix or glyph language without a project-specific function
+- saturated toy colors
+- visual roughness that harms readability
+- borrowed brand references that are not visible in the shipped work
 
 ## Visual Direction
 

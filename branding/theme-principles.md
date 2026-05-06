@@ -70,14 +70,14 @@ Do not use cyan as general decoration. If many things glow cyan, nothing is a si
 - NULSIGHT: duel state colors may go outside the shared palette for legality, ownership, damage, warning, success, selection, and chain/stack clarity.
 - Any exception outside these cases should be documented before implementation.
 
-## Neo-Brutal / Nothing Layering
+## Structural Layering
 
 Current flat design is the implementation base.
 
 Add long-term character through:
 
 - square or minimally rounded panels
-- visible borders and seams
+- visible borders and layout boundaries
 - deliberate grid exposure
 - large but controlled typography
 - black-forward surfaces with mist/cyan contrast
@@ -89,13 +89,13 @@ Do not add:
 - unreadable contrast
 - novelty cursors
 - fake hardware graphics
-- decorative dot grids without state meaning
+- decorative marks without state meaning
 
-## Glyph And Signal Rules
+## State Signal Rules
 
-- Dots, glyphs, ticks, bars, and circuit-like marks must represent state, selection, route, loading, focus, or progress.
-- Decorative glyphs with no state meaning should be removed.
-- Repeated signal marks should be sparse enough that the active state remains obvious.
+- Ticks, bars, counters, badges, and marks must represent state, selection, route, loading, focus, or progress.
+- Decorative marks with no state meaning should be removed.
+- Repeated state marks should be sparse enough that the active state remains obvious.
 
 ## Motion Rules
 

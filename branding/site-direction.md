@@ -12,7 +12,7 @@ The public portfolio site should be an index of accessible work, not a synthetic
 
 ## Visual Direction Decision
 
-The site should move toward a purposeful neo-brutal portfolio index.
+The site should move toward a purposeful structural portfolio index.
 
 The ratio is:
 
@@ -20,9 +20,9 @@ The ratio is:
 - 20% exposed system structure
 - 10% restrained web interaction demonstration
 
-This gives us room to add sharper blocks, visible grids, hard outlines, and signal-like accents without turning the page into a poster.
+This gives us room to add sharper blocks, visible grids, hard outlines, and state-driven accents without turning the page into a poster.
 
-Flat design remains the base layer. Neo-brutalism and Nothing-inspired details are additive layers.
+Flat design remains the base layer. Structural contrast, visible layout boundaries, and purposeful interaction states are additive layers.
 
 ## First Screen Rule
 
@@ -49,7 +49,7 @@ Allowed:
 - hover/focus states that show interaction craft
 - small live-feeling details tied to real project links or implementation notes
 - exposed layout or system diagrams when they represent the real monorepo
-- signal-like UI details when they indicate focus, selection, active project, or navigation
+- state-driven UI details when they indicate focus, selection, active project, or navigation
 
 Avoid:
 
@@ -58,8 +58,8 @@ Avoid:
 - abstract orbit or network diagrams
 - metrics that do not come from the actual projects
 - long slogans that could describe any portfolio
-- dot-matrix decoration with no state or interaction meaning
-- neo-brutalist color blocks that compete with project evidence
+- decorative marks with no state or interaction meaning
+- oversized color blocks that compete with project evidence
 
 ## Color And Motion
 

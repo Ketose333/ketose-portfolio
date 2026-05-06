@@ -1,11 +1,16 @@
-# apps/site
+# Portfolio Site
 
-포트폴리오 사이트 앱입니다.
+공개 포트폴리오 인덱스 앱입니다. 주요 프로젝트, 라이브 링크, GitHub 링크, 작업 기준을 한 화면에서 확인할 수 있게 정리합니다.
 
-역할:
-- 프로젝트 소개
-- 배포 링크 제공
-- GitHub 및 운영 정보 정리
+## Live
 
-배포:
-- `https://ketose.vercel.app`
+- https://ketose.vercel.app
+
+## Run
+
+루트 디렉터리에서 실행합니다.
+
+```bash
+npm run dev:site
+npm run build:site
+```

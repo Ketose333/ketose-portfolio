@@ -4,18 +4,18 @@ import { AppFrame, ButtonSurface, SectionIntro, SectionPanel } from '@portfolio/
 
 const projectDetails = {
   wizletBudget: {
-    role: '실시간 협업 가계부',
-    summary: 'React/Vite 프론트와 Spring Boot 백엔드로 예산과 지출 기록을 연결했습니다.',
-    points: ['React + Vite', 'Spring Boot', 'WebSocket'],
+    role: 'API 연동 협업 가계부',
+    summary: 'React/Vite 화면에서 Spring Boot API와 예산, 지출 데이터 흐름을 연결했습니다.',
+    points: ['REST API', 'Data Flow', 'WebSocket'],
   },
   nulsight: {
-    role: '웹 TCG 클라이언트',
-    summary: '로비, 덱 편집, 덱허브, 듀얼 화면을 하나의 웹 TCG 프로토타입으로 묶었습니다.',
-    points: ['Lobby', 'Deck Builder', 'Duel Surface'],
+    role: '상태 기반 인터랙티브 UI',
+    summary: '로비, 덱 편집, 덱허브, 진행 화면의 선택 상태와 화면 흐름을 React/Vite로 묶었습니다.',
+    points: ['State Flow', 'Deck Builder', 'UI Flow'],
   },
-    role: '브라우저 슈팅 게임',
-    summary: 'PixiJS 캔버스 게임 위에 React HUD와 오버레이를 얹었습니다.',
-    points: ['20 Stages', 'Canvas + Overlay', 'Game HUD'],
+    role: 'Canvas/DOM UI 분리',
+    summary: 'PixiJS 렌더링 영역과 React HUD/오버레이를 분리해 입력 흐름과 화면 계층을 정리했습니다.',
+    points: ['Canvas + DOM', 'React HUD', 'Responsive UI'],
   },
 } as const
 
@@ -39,15 +39,15 @@ const capabilityDemos = [
   {
     id: 'overlay',
     label: '오버레이',
-    title: '게임 오버레이',
-    body: '캔버스는 게임에 맡기고, HUD와 모달은 DOM 표면으로 분리했습니다.',
+    title: '오버레이 계층',
+    body: '렌더링 영역과 DOM 표면을 분리해 HUD와 모달 상태를 독립적으로 다뤘습니다.',
     points: ['HUD', 'Modal Surface'],
   },
   {
     id: 'shared',
     label: '공용 UI',
     title: '공유 패키지',
-    body: 'theme, ui-shell, services를 공용 패키지로 두고 앱별 규칙은 각 앱에 남겼습니다.',
+    body: 'theme, ui-shell, services를 공용 패키지로 두고 앱별 화면 규칙은 각 앱에 남겼습니다.',
     points: ['Theme Tokens', 'ui-shell', 'Service Registry'],
   },
 ] as const
@@ -58,8 +58,8 @@ const stackGroups = [
     items: ['React', 'TypeScript', 'Vite', 'CSS'],
   },
   {
-    title: 'Game UI',
-    items: ['PixiJS', 'DOM Overlay', 'Keyboard Flow', 'Responsive Layout'],
+    title: 'Interactive UI',
+    items: ['Canvas Layer', 'DOM Overlay', 'Keyboard Flow', 'Responsive Layout'],
   },
   {
     title: 'Repo/Deploy',
@@ -78,10 +78,10 @@ export function HomePage() {
     <AppFrame as="main" innerClassName="page">
       <section className="hero" id="top">
         <div className="hero__copy">
-          <p className="kicker">작업 인덱스</p>
+          <p className="kicker">프론트엔드 작업 인덱스</p>
           <h1>바로 열 수 있는 작업</h1>
           <p className="lead lead--hero">
-            웹으로 배포한 작업을 개발 순서대로 정리했습니다.
+            React 기반 웹 작업을 라이브 링크와 레포로 확인할 수 있게 정리했습니다.
           </p>
           <div className="hero-actions">
             {projectCards.map((project, index) => (
@@ -136,7 +136,7 @@ export function HomePage() {
           titleClassName="ui-title-ko"
           eyebrowClassName="kicker"
           descriptionClassName="ui-copy-ko"
-          description={<p className="lead">각 프로젝트에서 직접 확인할 화면과 레포를 먼저 둡니다.</p>}
+          description={<p className="lead">각 프로젝트에서 확인할 UI 흐름과 레포를 먼저 둡니다.</p>}
         />
         <div className="project-lab">
           <div className="project-tabs" aria-label="프로젝트 선택">
@@ -194,7 +194,7 @@ export function HomePage() {
           titleClassName="ui-title-ko"
           eyebrowClassName="kicker"
           descriptionClassName="ui-copy-ko"
-          description={<p className="lead">화면에서 확인 가능한 구현 단위만 남겼습니다.</p>}
+          description={<p className="lead">화면에서 확인 가능한 UI 구현 단위만 남겼습니다.</p>}
         />
         <div className="demo-grid">
           <div className="demo-tabs" aria-label="웹 기능 선택">
@@ -239,7 +239,7 @@ export function HomePage() {
           titleClassName="ui-title-ko"
           eyebrowClassName="kicker"
           descriptionClassName="ui-copy-ko"
-          description={<p className="lead">공통 토큰과 셸은 상위에 두고, 게임 규칙과 화면 로직은 앱 안에 남겼습니다.</p>}
+          description={<p className="lead">공통 토큰과 셸은 상위에 두고, 앱별 화면 로직은 각 앱 안에 남겼습니다.</p>}
         />
         <div className="stack-grid">
           {stackGroups.map((group) => (

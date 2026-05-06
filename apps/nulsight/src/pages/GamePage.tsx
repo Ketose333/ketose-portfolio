@@ -660,7 +660,7 @@ export function GamePage() {
         visible={surfaceState.stackVisible}
         ariaLabel="스택 상태"
         panelClassName="stack-overlay__panel"
-        eyebrow="스택"
+        eyebrow="효과 처리"
         title="스택"
         subtitle={surfaceState.stackEntries.length > 0 ? `${surfaceState.stackEntries.length}개 대기 중` : '대기 중인 효과가 없습니다.'}
         actions={
