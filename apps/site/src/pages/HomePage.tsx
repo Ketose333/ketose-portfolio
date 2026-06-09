@@ -75,13 +75,12 @@ export function HomePage() {
   const [activeDemo, setActiveDemo] = useState<CapabilityDemo>(capabilityDemos[0])
 
   return (
-    <AppFrame as="main" innerClassName="page">
+    <AppFrame as="main" innerClassName="page home-page" maxWidth="1428px" gutter="96px">
       <section className="hero" id="top">
         <div className="hero__copy">
-          <p className="kicker">프론트엔드 작업 인덱스</p>
-          <h1>바로 열 수 있는 작업</h1>
+          <h1>검토 가능한 프론트엔드 작업</h1>
           <p className="lead lead--hero">
-            React 기반 웹 작업을 라이브 링크와 레포로 확인할 수 있게 정리했습니다.
+            프로젝트별 구현 범위, 라이브 링크, 레포를 빠르게 확인할 수 있게 정리했습니다.
           </p>
           <div className="hero-actions">
             {projectCards.map((project, index) => (
@@ -90,6 +89,8 @@ export function HomePage() {
                 className={`button${index === 0 ? '' : ' button--ghost'}`}
                 href={project.href}
                 key={project.id}
+                rel="noopener noreferrer"
+                target="_blank"
                 variant={index === 0 ? 'solid' : 'ghost'}
               >
                 {project.title} 열기
@@ -98,7 +99,13 @@ export function HomePage() {
           </div>
           <div className="hero-projects" aria-label="대표 작업">
             {projectCards.map((project) => (
-              <a className={`hero-project hero-project--${project.id}`} href={project.href} key={project.id}>
+              <a
+                className={`hero-project hero-project--${project.id}`}
+                href={project.href}
+                key={project.id}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
                 <span className="hero-project__status">{project.metric}</span>
                 <strong>{project.title}</strong>
                 <span>{project.role}</span>
@@ -111,15 +118,15 @@ export function HomePage() {
 
         <SectionPanel as="aside" className="access-panel" aria-label="포트폴리오 접근 링크">
           <div className="access-panel__top">
-            <span>접근</span>
-            <a href={portfolioUrls.github}>GitHub</a>
+            <span>링크</span>
+            <a href={portfolioUrls.github} rel="noopener noreferrer" target="_blank">GitHub</a>
           </div>
           <dl className="service-list">
             {portfolioServiceList.map((service) => (
               <div className="service-list__row" key={service.id}>
                 <dt>{service.name}</dt>
                 <dd>
-                  <a href={service.url}>{service.host}</a>
+                  <a href={service.url} rel="noopener noreferrer" target="_blank">{service.host}</a>
                 </dd>
               </div>
             ))}
@@ -130,13 +137,11 @@ export function HomePage() {
       <section className="section" id="projects">
         <SectionIntro
           className="section__header"
-          eyebrow="작업"
-          title="작업별 확인 지점"
+          title="작업물"
           titleAs="h2"
           titleClassName="ui-title-ko"
-          eyebrowClassName="kicker"
           descriptionClassName="ui-copy-ko"
-          description={<p className="lead">각 프로젝트에서 확인할 UI 흐름과 레포를 먼저 둡니다.</p>}
+          description={<p className="lead">채용 검토에서 먼저 확인할 수 있는 작업 범위와 링크입니다.</p>}
         />
         <div className="project-lab">
           <div className="project-tabs" aria-label="프로젝트 선택">
@@ -164,11 +169,25 @@ export function HomePage() {
                   <li key={point}>{point}</li>
                 ))}
               </ul>
-              <ButtonSurface as="a" className="button button--ghost" href={activeProject.href} variant="ghost">
+              <ButtonSurface
+                as="a"
+                className="button button--ghost"
+                href={activeProject.href}
+                rel="noopener noreferrer"
+                target="_blank"
+                variant="ghost"
+              >
                 프로젝트 열기
               </ButtonSurface>
               {activeProject.repositoryHref ? (
-                <ButtonSurface as="a" className="button button--ghost" href={activeProject.repositoryHref} variant="ghost">
+                <ButtonSurface
+                  as="a"
+                  className="button button--ghost"
+                  href={activeProject.repositoryHref}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  variant="ghost"
+                >
                   레포 보기
                 </ButtonSurface>
               ) : null}
@@ -188,13 +207,11 @@ export function HomePage() {
       <section className="section" id="demo">
         <SectionIntro
           className="section__header"
-          eyebrow="구현"
-          title="웹에서 보여줄 수 있는 것"
+          title="구현 상세"
           titleAs="h2"
           titleClassName="ui-title-ko"
-          eyebrowClassName="kicker"
           descriptionClassName="ui-copy-ko"
-          description={<p className="lead">화면에서 확인 가능한 UI 구현 단위만 남겼습니다.</p>}
+          description={<p className="lead">화면 흐름, 상태 처리, 공용 UI처럼 질문받기 쉬운 지점을 정리했습니다.</p>}
         />
         <div className="demo-grid">
           <div className="demo-tabs" aria-label="웹 기능 선택">
@@ -233,13 +250,11 @@ export function HomePage() {
       <section className="section section--system" id="system">
         <SectionIntro
           className="section__header"
-          eyebrow="구조"
-          title="공유 구조"
+          title="기술 스택"
           titleAs="h2"
           titleClassName="ui-title-ko"
-          eyebrowClassName="kicker"
           descriptionClassName="ui-copy-ko"
-          description={<p className="lead">공통 토큰과 셸은 상위에 두고, 앱별 화면 로직은 각 앱 안에 남겼습니다.</p>}
+          description={<p className="lead">기술 이름보다 실제 화면에서 맡은 역할을 기준으로 묶었습니다.</p>}
         />
         <div className="stack-grid">
           {stackGroups.map((group) => (

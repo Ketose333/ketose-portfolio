@@ -67,6 +67,7 @@
   min-height: 44px;
   padding: 0 16px;
   border: 1px solid var(--theme-border-strong, var(--theme-border));
+  border-radius: var(--theme-radius-control, 10px);
   background: color-mix(in srgb, var(--theme-panel-strong, var(--theme-panel)) 94%, black 6%);
   color: var(--theme-text);
   text-decoration: none;
@@ -117,6 +118,7 @@
   gap: 14px;
   padding: 18px;
   border: 1px solid var(--theme-border);
+  border-radius: var(--theme-radius-panel, 12px);
   background: color-mix(in srgb, var(--theme-panel) 92%, black 8%);
 }
 
@@ -170,6 +172,7 @@
   gap: 18px;
   padding: 24px;
   border: 1px solid var(--theme-border);
+  border-radius: var(--theme-radius-panel, 12px);
   background: color-mix(in srgb, var(--theme-panel-strong, var(--theme-panel)) 95%, black 5%);
 }
 
@@ -195,6 +198,7 @@
   gap: 18px;
   padding: 24px;
   border: 1px solid var(--theme-border);
+  border-radius: var(--theme-radius-panel, 12px);
   background: color-mix(in srgb, var(--theme-panel-strong, var(--theme-panel)) 96%, black 4%);
 }
 
@@ -244,6 +248,7 @@
   min-height: 52px;
   padding: 12px 16px;
   border: 1px solid var(--theme-border);
+  border-radius: var(--theme-radius-control, 10px);
   background: color-mix(in srgb, var(--theme-panel) 94%, black 6%);
   color: var(--theme-text);
   text-align: center;
@@ -380,6 +385,7 @@
   min-height: 36px;
   padding: 0 12px;
   border: 1px solid var(--theme-border);
+  border-radius: var(--theme-radius-control, 10px);
   background: color-mix(in srgb, var(--theme-panel-strong, var(--theme-panel)) 94%, black 6%);
   color: var(--theme-text);
   text-decoration: none;

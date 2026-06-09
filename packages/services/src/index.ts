@@ -1,6 +1,8 @@
 export type PortfolioProjectServiceId = Exclude<PortfolioServiceId, 'site'>
 export type PortfolioAuthStrategy = 'none' | 'local-session'
 
+export const portfolioContactEmail = 'amumalbot4@gmail.com'
+
 export const portfolioLinks = {
   github: 'https://github.com/Ketose333/ketose-portfolio',
   wizletBudgetRepository: 'https://github.com/sinisack/ogetherBudget_Project',
@@ -82,6 +84,7 @@ export const portfolioUrls = {
   wizletBudgetLabel: portfolioServices.wizletBudget.host,
   wizletBudgetRepository: portfolioLinks.wizletBudgetRepository,
   github: portfolioLinks.github,
+  email: portfolioContactEmail,
 } as const
 
 export const portfolioAuthService = portfolioServices.nulsight

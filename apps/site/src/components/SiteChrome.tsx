@@ -1,15 +1,16 @@
 import type { PropsWithChildren } from 'react'
+import { Link } from 'react-router-dom'
 import { ShellChrome } from '@portfolio/ui-shell'
 import { portfolioProjectServices, portfolioUrls } from '@portfolio/services'
 
 const SECTION_LINKS = [
-  { label: '작업', href: '#projects' },
-  { label: '기술', href: '#demo' },
-  { label: '구조', href: '#system' },
+  { label: '작업', href: '/#projects' },
+  { label: '구현', href: '/#demo' },
+  { label: '기술', href: '/#system' },
 ] as const
 
 const ACTION_LINKS = [
-  { label: 'GitHub', href: portfolioUrls.github },
+  { label: '연락하기', href: '/contact' },
 ] as const
 
 export function SiteChrome({ children }: PropsWithChildren) {
@@ -19,11 +20,12 @@ export function SiteChrome({ children }: PropsWithChildren) {
       headerClassName="site-shell__header"
       contentClassName="site-shell__content"
       footerClassName="site-shell__footer"
+      maxWidth="1428px"
+      gutter="96px"
       brand={
-        <a className="ui-shell-chrome__brand site-shell__brand" href="/">
-          <span className="ui-shell-chrome__eyebrow">Ketose</span>
-          <strong className="ui-shell-chrome__title">프론트엔드 작업</strong>
-        </a>
+        <Link className="ui-shell-chrome__brand site-shell__brand" to="/">
+          <strong className="ui-shell-chrome__title">Portfolio</strong>
+        </Link>
       }
       context={null}
       nav={
@@ -38,30 +40,39 @@ export function SiteChrome({ children }: PropsWithChildren) {
       actions={
         <>
           {ACTION_LINKS.map((item, index) => (
-            <a
+            <Link
               className={`ui-shell-chrome__button${index === 0 ? ' ui-shell-chrome__button--solid' : ''}`}
-              href={item.href}
+              to={item.href}
               key={item.href}
             >
               {item.label}
-            </a>
+            </Link>
           ))}
         </>
       }
       footer={
         <>
           <div className="ui-shell-chrome__footer-note">
-            <p className="ui-shell-chrome__footer-copy">라이브 웹과 GitHub 저장소</p>
+            <p className="ui-shell-chrome__footer-copy">Portfolio</p>
           </div>
           <div className="ui-shell-chrome__footer-links">
             {portfolioProjectServices.map((service) => (
-              <a className="ui-shell-chrome__footer-link" href={service.url} key={service.id}>
+              <a
+                className="ui-shell-chrome__footer-link"
+                href={service.url}
+                key={service.id}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
                 {service.name}
               </a>
             ))}
-            <a className="ui-shell-chrome__footer-link" href={portfolioUrls.github}>
+            <a className="ui-shell-chrome__footer-link" href={portfolioUrls.github} rel="noopener noreferrer" target="_blank">
               GitHub
             </a>
+            <Link className="ui-shell-chrome__footer-link" to="/contact">
+              연락하기
+            </Link>
           </div>
         </>
       }

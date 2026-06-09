@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { SiteChrome } from '../../components/SiteChrome'
+import { ContactPage } from '../../pages/ContactPage'
 import { HomePage } from '../../pages/HomePage'
 
 export function AppRouter() {
@@ -11,6 +12,14 @@ export function AppRouter() {
           element={
             <SiteChrome>
               <HomePage />
+            </SiteChrome>
+          }
+        />
+        <Route
+          path="/contact"
+          element={
+            <SiteChrome>
+              <ContactPage />
             </SiteChrome>
           }
         />
