@@ -1,14 +1,11 @@
 # Ketose Portfolio
 
+![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)
+![PixiJS](https://img.shields.io/badge/PixiJS-E72264?style=flat-square&logo=pixijs&logoColor=white)
+
 React, TypeScript, Vite 기반 프론트엔드 포트폴리오 모노레포입니다. 공개 포트폴리오 사이트와 두 개의 인터랙티브 웹 앱을 한 저장소에서 관리합니다.
-
-## Live
-
-| Project | URL | Focus |
-| --- | --- | --- |
-| Portfolio | https://ketose.vercel.app | 프로젝트 인덱스 |
-| NULSIGHT | https://nulsight.vercel.app | 상태 기반 React UI |
-| 같이가계 | https://wizlet-budget.vercel.app | 협업 가계부 프론트엔드 |
 
 같이가계 원본 저장소: https://github.com/sinisack/ogetherBudget_Project
 
@@ -47,6 +44,12 @@ npm run check
 - 서비스 URL과 프로젝트 메타데이터는 `packages/services/src/index.ts`에서 관리합니다.
 - 공통 색상 토큰은 `themes/theme.oklch.css`를 기준으로 변환합니다.
 - NULSIGHT는 로비, 덱 편집, 덱 허브, 진행 화면처럼 상태가 많은 UI 흐름을 다룹니다.
+
+## 진행 현황
+
+- [x] `apps/site` 공개 포트폴리오 인덱스 배포
+- [x] `apps/nulsight` 상태 흐름 UI 배포
+- [x] 공통 패키지(`ui-shell`/`services`/`themes`) 분리로 앱 간 중복 제거
 
 ## Docs
 
