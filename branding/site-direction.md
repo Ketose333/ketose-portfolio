@@ -66,7 +66,11 @@ Avoid:
 - The site is dark-mode-first, matching the rest of the monorepo.
 - Default to `themes/theme.*` tokens.
 - Site-local colors require a note here explaining their role.
-- Current decision: the site uses the shared `#C8D0D3`, `#735587`, `#91EDFC` palette through theme tokens and does not add a site-only fourth accent.
+- Current decision: the site uses the shared `#C8D0D3`, `#735587`, `#91EDFC` palette through theme tokens as the base, plus one documented site-only accent + text extension (`--site-*` tokens in `apps/site/src/styles.css`):
+  - `--site-indigo` (`rgb(192 193 255)` mixed 78/22 with the shared cyan) — the site's primary interactive/CTA accent (solid buttons, active borders, badges, links). Paired with `#1000a9` as the on-indigo text color for contrast on solid indigo buttons.
+  - `--site-slate-bg` / `--site-slate-surface(-strong)` — a navy elevation scale (`rgb(10 15 29)` → `rgb(30 41 59)` family) for page background and layered panels, distinct from the theme's white-veil-on-black panel approach.
+  - `--site-slate-text` (`#f8fafc`) / `--site-slate-muted` (`#94a3b8`) — the site's body text pair, brighter/cooler than the shared mist token.
+  - These predate this note; adding a *new* site-only color still requires updating this section first.
 - Do not add a light landing-page variant unless `theme-principles.md` is updated first.
 - Motion should demonstrate interaction state, not fill empty space.
 - Reduced-motion behavior should remain boring and correct.

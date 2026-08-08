@@ -12,6 +12,7 @@
   --site-slate-text: #f8fafc;
   --site-slate-muted: #94a3b8;
   --site-glass-fill: linear-gradient(112deg, rgb(30 41 59 / 0.62), rgb(17 25 42 / 0.68));
+  --site-glass-subtle: rgb(255 255 255 / 0.025);
   --site-radius-panel: var(--theme-radius-panel);
   --site-radius-card: var(--theme-radius-card);
   --site-radius-control: var(--theme-radius-control);
@@ -69,7 +70,7 @@ body {
   border-color: color-mix(in srgb, var(--site-indigo) 72%, white 10%);
   background: var(--site-indigo);
   color: #1000a9;
-  box-shadow: 0 14px 34px rgb(192 193 255 / 0.16);
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--site-indigo) 16%, transparent);
 }
 
 .site-shell__header .ui-shell-chrome__nav-link {
@@ -113,7 +114,7 @@ body {
   min-height: 38px;
   border-color: var(--site-slate-border);
   border-radius: var(--site-radius-control);
-  background: rgb(255 255 255 / 0.025);
+  background: var(--site-glass-subtle);
   color: color-mix(in srgb, var(--site-slate-text) 86%, var(--site-slate-muted));
   font-size: 13px;
   letter-spacing: 0;
@@ -847,7 +848,7 @@ body {
 .home-page .preview-row {
   border-color: var(--site-slate-border);
   border-radius: var(--site-radius-control);
-  background: rgb(255 255 255 / 0.025);
+  background: var(--site-glass-subtle);
   overflow: hidden;
 }
 
@@ -927,7 +928,7 @@ body {
   width: min(1000px, 82vw);
   height: 620px;
   border-radius: 999px;
-  background: radial-gradient(circle, rgb(192 193 255 / 0.1), transparent 62%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--site-indigo) 10%, transparent), transparent 62%);
   filter: blur(70px);
   transform: translateX(-50%);
   pointer-events: none;
@@ -1029,7 +1030,7 @@ body {
 .contact-input:focus {
   border-color: var(--site-indigo);
   background: rgb(11 19 38 / 0.94);
-  box-shadow: 0 0 0 4px rgb(192 193 255 / 0.1);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--site-indigo) 10%, transparent);
 }
 
 .contact-input--textarea {
@@ -1070,7 +1071,7 @@ body {
 
 .contact-open-link {
   border-color: rgb(255 255 255 / 0.16);
-  background: rgb(255 255 255 / 0.03);
+  background: var(--theme-panel);
   color: var(--site-slate-text);
 }
 
