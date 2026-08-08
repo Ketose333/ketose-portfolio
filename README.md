@@ -5,7 +5,9 @@
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)
 ![PixiJS](https://img.shields.io/badge/PixiJS-E72264?style=flat-square&logo=pixijs&logoColor=white)
 
-React, TypeScript, Vite 기반 프론트엔드 포트폴리오 모노레포입니다. 공개 포트폴리오 사이트와 두 개의 인터랙티브 웹 앱을 한 저장소에서 관리합니다.
+React, TypeScript, Vite 기반 프론트엔드 포트폴리오 모노레포입니다. 공개 포트폴리오 사이트와 인터랙티브 웹 앱들을 한 저장소에서 관리합니다.
+
+> `apps/nulsight`는 레포에 남아 있고 개별 배포도 유지되지만, 현재 `apps/site`(공개 포트폴리오 인덱스)에서는 링크하지 않습니다.
 
 같이가계 원본 저장소: https://github.com/sinisack/ogetherBudget_Project
 

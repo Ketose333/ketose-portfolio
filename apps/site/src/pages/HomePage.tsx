@@ -8,15 +8,6 @@ const projectDetails = {
     summary: 'React/Vite 화면에서 Spring Boot API와 예산, 지출 데이터 흐름을 연결했습니다.',
     points: ['REST API', 'Data Flow', 'WebSocket'],
   },
-  nulsight: {
-    role: '상태 기반 인터랙티브 UI',
-    summary: '로비, 덱 편집, 덱허브, 진행 화면의 선택 상태와 화면 흐름을 React/Vite로 묶었습니다.',
-    points: ['State Flow', 'Deck Builder', 'UI Flow'],
-  },
-    role: 'Canvas/DOM UI 분리',
-    summary: 'PixiJS 렌더링 영역과 React HUD/오버레이를 분리해 입력 흐름과 화면 계층을 정리했습니다.',
-    points: ['Canvas + DOM', 'React HUD', 'Responsive UI'],
-  },
 } as const
 
 const projectCards = portfolioProjectServices.map((service) => ({
