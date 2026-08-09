@@ -24,7 +24,7 @@
 앞으로 작업을 제안하거나 마무리할 때는 가능한 한 아래 번호를 유지합니다.
 
 1. 범위: 이번 변경이 site, NULSIGHT, 공용 패키지, 문서 중 어디에 닿는지 먼저 적습니다.
-2. 기준: 관련 source of truth가 있는지 확인합니다. 서비스 정보는 `packages/services/src/index.ts`, 색상은 `themes/theme.oklch.css`, 문체는 `branding/ui-copy-guardrails.md`를 우선합니다.
+2. 기준: 관련 source of truth가 있는지 확인합니다. 프로젝트 사실은 `E:/CAREER/portfolio/projects.json`, 고정 서비스 정보는 `packages/services/src/index.ts`, 색상은 `themes/theme.oklch.css`, 문체는 `branding/ui-copy-guardrails.md`를 우선합니다.
 3. 정리: legacy, fallback, 중복 문구, 앱 전용 래퍼가 남아 있는지 봅니다.
 4. UI: 줄바꿈, 여백, 정보 위계, 장식성 텍스트, 모바일 폭을 확인합니다.
 5. 검증: 문서만 바꿨다면 `git diff --check`, 코드나 스타일을 바꿨다면 `npm run verify`를 기준으로 합니다.
@@ -51,4 +51,4 @@
 - 공용 계정 클라이언트는 `packages/account-client`
 - 공용 서버 auth/storage는 `packages/server-auth`, `packages/server-storage`
 - `site`는 아직 public-first 앱입니다.
-- 서비스명, URL, 레포 링크, 프로젝트 날짜 라벨은 `packages/services/src/index.ts`를 기준으로 합니다.
+- 프로젝트명, URL, 레포 링크, 기간·상태는 중앙 카탈로그에서 생성한 `packages/services/src/projects.generated.ts`를 기준으로 합니다.

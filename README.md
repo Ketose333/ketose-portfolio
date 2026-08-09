@@ -49,7 +49,7 @@ React, TypeScript, Vite 기반 풀스택 & AI 프로젝트 포트폴리오 모�
 
 **`apps/site`**
 
-- 정적 React SPA, 프로젝트 카드 데이터는 `packages/services/src/index.ts`가 단일 진실 공급원
+- 정적 React SPA, 프로젝트 카드는 `E:/CAREER/portfolio/projects.json`에서 생성한 `packages/services/src/projects.generated.ts`를 소비
 
 <p align="right">(<a href="#readme-top">맨 위로</a>)</p>
 
@@ -87,16 +87,18 @@ npm run check          # 테마 토큰과 스타일 경계 검사
 
 ## 작업물
 
-`apps/site`는 아래 프로젝트들을 실제 배포 링크와 함께 소개합니다(자세한 메타데이터는 `packages/services/src/index.ts` 참고).
+`apps/site`는 중앙 카탈로그에서 공개 대상으로 지정한 프로젝트를 실제 기간·상태·링크와 함께 소개합니다.
 
-| 프로젝트 | 설명 |
-| --- | --- |
-| [무디트리](https://mooditree.vercel.app) | 감정 기록 AI 웹 앱 |
-| [같이가계](https://wizlet-budget.vercel.app) | 팀 가계부 웹 앱 |
-| [도파체크](https://dopacheck.luma200ok.com) | 도파민 습관 체크 웹 앱 |
-| [리뷰 감성 분석](https://nsmc-sentiment.streamlit.app) | 리뷰 텍스트 감성 분석 |
-| [음악 감정 추천](https://music-mood-recs.streamlit.app) | 감정 기반 음악 추천 |
-| [하자체크](https://hajacheck.luma200ok.com) | 부동산 하자 체크 웹 앱 |
+<!-- PORTFOLIO:WEB-PROJECTS:START -->
+| 프로젝트 | 기간 | 상태 |
+| --- | --- | --- |
+| [무디트리](https://mooditree.vercel.app) | 2025.06.27 ~ 2025.07.31 (5주) | completed |
+| [같이가계](https://wizlet-budget.vercel.app) | 2025.10.17 ~ 2025.11.21 (5주) | completed |
+| [도파체크](https://dopacheck.luma200ok.com) | 2026.06.10 ~ 2026.06.17 (7일) | completed |
+| [리뷰 감성 분석](https://nsmc-sentiment.streamlit.app) | 2026.06.21 ~ 2026.07.03 (12일) | completed |
+| [음악 감정 추천](https://music-mood-recs.streamlit.app) | 2026.06.25 ~ 2026.07.04 (9일) | completed |
+| [하자체크](https://hajacheck.luma200ok.com) | 2026.07.09 ~ 2026.08.07 (4주) | completed |
+<!-- PORTFOLIO:WEB-PROJECTS:END -->
 
 <p align="right">(<a href="#readme-top">맨 위로</a>)</p>
 
@@ -105,7 +107,7 @@ npm run check          # 테마 토큰과 스타일 경계 검사
 - `apps/site`: 공개 포트폴리오 인덱스
 - `apps/nulsight`: 별도 애플리케이션 워크스페이스
 - `packages/ui-shell`: 앱 공통 레이아웃과 화면 프리미티브
-- `packages/services`: 서비스 URL, 링크, 프로젝트 메타데이터 (source of truth)
+- `packages/services`: 고정 서비스 URL과 중앙 카탈로그에서 생성된 프로젝트 메타데이터
 - `packages/account-client`: 프론트엔드 계정 클라이언트
 - `packages/server-auth`: 계정 저장소와 쿠키 세션 유틸
 - `packages/server-storage`: 서버 저장소 래퍼와 네임스페이스 유틸
