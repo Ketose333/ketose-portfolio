@@ -406,6 +406,10 @@
   color: var(--theme-text);
 }
 
+.ui-shell-chrome__footer-link-icon {
+  margin-left: 6px;
+}
+
 .ui-shell-chrome__nav-link--active,
 .ui-shell-chrome__button--solid {
   border-color: var(--theme-button-solid-border);

@@ -6,6 +6,38 @@ import type {
   ReactNode,
 } from 'react'
 
+type IconProps = {
+  className?: string
+  size?: number
+}
+
+/**
+ * Lucide "arrow-up-right" (https://lucide.dev/icons/arrow-up-right), inlined
+ * because this workspace's node_modules can't be npm-installed on the current
+ * filesystem (no symlink support). Path data is Lucide's, used under ISC.
+ * Denotes an external/new-tab link — the one sanctioned alternative to raw
+ * unicode arrows/emoji for that purpose across all three apps.
+ */
+export function ExternalLinkIcon({ className, size = 14 }: IconProps) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      height={size}
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      viewBox="0 0 24 24"
+      width={size}
+    >
+      <path d="M7 7h10v10" />
+      <path d="M7 17 17 7" />
+    </svg>
+  )
+}
+
 type TitleTag = 'h1' | 'h2' | 'h3' | 'div'
 
 type AppFramePreset = 'default' | 'narrow' | 'reading' | 'game' | 'stage'

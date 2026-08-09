@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from 'react'
 import { Link } from 'react-router-dom'
-import { ShellChrome } from '@portfolio/ui-shell'
+import { ExternalLinkIcon, ShellChrome } from '@portfolio/ui-shell'
 import { portfolioUrls } from '@portfolio/services'
 
 const SECTION_LINKS = [
@@ -57,7 +57,8 @@ export function SiteChrome({ children }: PropsWithChildren) {
           </div>
           <div className="ui-shell-chrome__footer-links">
             <a className="ui-shell-chrome__footer-link" href={portfolioUrls.github} rel="noopener noreferrer" target="_blank">
-              GitHub ↗
+              GitHub
+              <ExternalLinkIcon className="ui-shell-chrome__footer-link-icon" />
             </a>
             <Link className="ui-shell-chrome__footer-link" to="/contact">
               연락하기

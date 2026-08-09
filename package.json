@@ -9,6 +9,7 @@
   "scripts": {
     "verify": "npm run check && npm run build",
     "check": "npm run check:theme && npm run check:nulsight-ui",
+    "build": "npm run build:site && npm run build:nulsight",
     "build:theme": "node scripts/build-theme-css.mjs",
     "check:nulsight-ui": "node scripts/check-nulsight-style-boundaries.mjs",
     "dev:site": "npm run dev --workspace @portfolio/site",

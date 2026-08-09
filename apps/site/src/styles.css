@@ -673,9 +673,6 @@ body {
   backdrop-filter: blur(12px);
 }
 
-  grid-column: 1 / -1;
-}
-
 .home-page .hero-project::before {
   display: none;
 }
@@ -1300,9 +1297,6 @@ body {
   .home-page .project-tabs,
   .home-page .demo-tabs {
     grid-template-columns: 1fr;
-  }
-
-    grid-column: auto;
   }
 
   .home-page .project-lab {
