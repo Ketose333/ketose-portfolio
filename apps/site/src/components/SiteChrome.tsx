@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from 'react'
 import { Link } from 'react-router-dom'
 import { ShellChrome } from '@portfolio/ui-shell'
-import { portfolioProjectServices, portfolioUrls } from '@portfolio/services'
+import { portfolioUrls } from '@portfolio/services'
 
 const SECTION_LINKS = [
   { label: '작업', href: '/#projects' },
@@ -56,19 +56,8 @@ export function SiteChrome({ children }: PropsWithChildren) {
             <p className="ui-shell-chrome__footer-copy">Portfolio</p>
           </div>
           <div className="ui-shell-chrome__footer-links">
-            {portfolioProjectServices.map((service) => (
-              <a
-                className="ui-shell-chrome__footer-link"
-                href={service.url}
-                key={service.id}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                {service.name}
-              </a>
-            ))}
             <a className="ui-shell-chrome__footer-link" href={portfolioUrls.github} rel="noopener noreferrer" target="_blank">
-              GitHub
+              GitHub ↗
             </a>
             <Link className="ui-shell-chrome__footer-link" to="/contact">
               연락하기

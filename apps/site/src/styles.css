@@ -8,11 +8,12 @@
   --site-slate-bg: #0a0f1d;
   --site-slate-surface: rgb(30 41 59 / 0.5);
   --site-slate-surface-strong: rgb(19 27 46 / 0.86);
-  --site-slate-border: rgb(255 255 255 / 0.08);
+  --site-slate-border: rgb(255 255 255 / 0.1);
   --site-slate-text: #f8fafc;
   --site-slate-muted: #94a3b8;
   --site-glass-fill: linear-gradient(112deg, rgb(30 41 59 / 0.62), rgb(17 25 42 / 0.68));
-  --site-glass-subtle: rgb(255 255 255 / 0.025);
+  --site-glass-subtle: rgb(255 255 255 / 0.05);
+  --site-glass-subtle-strong: rgb(255 255 255 / 0.1);
   --site-radius-panel: var(--theme-radius-panel);
   --site-radius-card: var(--theme-radius-card);
   --site-radius-control: var(--theme-radius-control);
@@ -28,8 +29,8 @@ body {
 
 .site-shell {
   background:
-    linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px),
+    linear-gradient(var(--site-glass-subtle) 1px, transparent 1px),
+    linear-gradient(90deg, var(--site-glass-subtle) 1px, transparent 1px),
     radial-gradient(circle at 50% 14%, color-mix(in srgb, var(--site-indigo) 10%, transparent), transparent 36%),
     var(--site-slate-bg);
   background-size: 50px 50px, 50px 50px, auto, auto;
@@ -123,7 +124,7 @@ body {
 .site-shell__footer .ui-shell-chrome__footer-link:hover {
   transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--site-indigo) 32%, var(--site-slate-border));
-  background: rgb(255 255 255 / 0.055);
+  background: var(--site-glass-subtle-strong);
   color: var(--site-slate-text);
 }
 
@@ -576,7 +577,7 @@ body {
 }
 
 .demo-stage--motion .demo-stage__signal span:nth-child(1),
-.demo-stage--overlay .demo-stage__signal span:nth-child(2),
+.demo-stage--tabs .demo-stage__signal span:nth-child(2),
 .demo-stage--shared .demo-stage__signal span:nth-child(3) {
   background: var(--site-cyan);
   box-shadow: 0 0 28px color-mix(in srgb, var(--site-cyan) 38%, transparent);
@@ -1070,7 +1071,7 @@ body {
 }
 
 .contact-open-link {
-  border-color: rgb(255 255 255 / 0.16);
+  border-color: rgb(255 255 255 / 0.15);
   background: var(--theme-panel);
   color: var(--site-slate-text);
 }
@@ -1263,7 +1264,7 @@ body {
     width: 100%;
     border-color: var(--site-slate-border);
     border-radius: var(--site-radius-control);
-    background: rgb(255 255 255 / 0.02);
+    background: var(--site-glass-subtle);
   }
 
   .site-shell__header .ui-shell-chrome__button--solid {

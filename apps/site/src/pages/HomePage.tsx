@@ -3,10 +3,35 @@ import { portfolioProjectServices, portfolioServiceList, portfolioUrls } from '@
 import { AppFrame, ButtonSurface, SectionIntro, SectionPanel } from '@portfolio/ui-shell'
 
 const projectDetails = {
+  mooditree: {
+    role: '감정 기록 캘린더 UI',
+    summary: 'Zustand 전역 상태 관리를 도입하고 캘린더-폼 데이터 동기화로 렌더링을 최적화했습니다.',
+    points: ['Zustand', 'State Sync', 'Calendar UI'],
+  },
   wizletBudget: {
     role: 'API 연동 협업 가계부',
     summary: 'React/Vite 화면에서 Spring Boot API와 예산, 지출 데이터 흐름을 연결했습니다.',
     points: ['REST API', 'Data Flow', 'WebSocket'],
+  },
+  dopacheck: {
+    role: '영수증 분석 라우트 & 보안',
+    summary: 'Flask 라우트로 배달 영수증 분석을 구현하고 CSRF·세션 보안, 모바일 반응형 대응을 맡았습니다.',
+    points: ['Flask', 'CSRF/Session', 'Responsive'],
+  },
+  reviewSentiment: {
+    role: '감성 분석 모델 & 추론 API',
+    summary: 'KLUE-BERT를 파인튜닝하고 FastAPI 기반 추론 API로 서빙했습니다.',
+    points: ['KLUE-BERT', 'Fine-tuning', 'FastAPI'],
+  },
+  musicRecs: {
+    role: '음악 임베딩 추천 파이프라인',
+    summary: '멜-스펙트로그램 특성 추출과 CNN 임베딩 기반 코사인 유사도 추천을 구축했습니다.',
+    points: ['Librosa', 'CNN Embedding', 'Recommendation'],
+  },
+  hajacheck: {
+    role: '랜딩·지도 뷰 & LLM 보고서 체인',
+    summary: '랜딩 페이지와 지도 뷰를 구현하고 LLM 보고서 체인, Grounding Check 대조 모듈을 맡았습니다.',
+    points: ['Map View', 'LLM Report Chain', 'Grounding Check'],
   },
 } as const
 
@@ -28,11 +53,11 @@ const capabilityDemos = [
     points: ['Hover', 'Focus', 'Reduced Motion'],
   },
   {
-    id: 'overlay',
-    label: '오버레이',
-    title: '오버레이 계층',
-    body: '렌더링 영역과 DOM 표면을 분리해 HUD와 모달 상태를 독립적으로 다뤘습니다.',
-    points: ['HUD', 'Modal Surface'],
+    id: 'tabs',
+    label: '탭 상태',
+    title: '프로젝트 탭 전환',
+    body: '작업물 탭과 이 구현 상세 탭 모두 같은 aria-pressed 패턴으로 활성 상태를 관리합니다.',
+    points: ['useState', 'aria-pressed', 'Keyboard Focus'],
   },
   {
     id: 'shared',
@@ -50,7 +75,7 @@ const stackGroups = [
   },
   {
     title: 'Interactive UI',
-    items: ['Canvas Layer', 'DOM Overlay', 'Keyboard Flow', 'Responsive Layout'],
+    items: ['ARIA State', 'Reduced Motion', 'Keyboard Flow', 'Responsive Layout'],
   },
   {
     title: 'Repo/Deploy',
@@ -69,7 +94,7 @@ export function HomePage() {
     <AppFrame as="main" innerClassName="page home-page" maxWidth="1428px" gutter="96px">
       <section className="hero" id="top">
         <div className="hero__copy">
-          <h1>검토 가능한 프론트엔드 작업</h1>
+          <h1>검토 가능한 풀스택 & AI 작업</h1>
           <p className="lead lead--hero">
             프로젝트별 구현 범위, 라이브 링크, 레포를 빠르게 확인할 수 있게 정리했습니다.
           </p>
@@ -132,7 +157,7 @@ export function HomePage() {
           titleAs="h2"
           titleClassName="ui-title-ko"
           descriptionClassName="ui-copy-ko"
-          description={<p className="lead">채용 검토에서 먼저 확인할 수 있는 작업 범위와 링크입니다.</p>}
+          description={<p className="lead">프로젝트를 하나씩 골라 역할, 스택, 링크를 자세히 볼 수 있습니다.</p>}
         />
         <div className="project-lab">
           <div className="project-tabs" aria-label="프로젝트 선택">
