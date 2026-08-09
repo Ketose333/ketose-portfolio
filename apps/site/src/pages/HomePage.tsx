@@ -1,47 +1,34 @@
 import { useState } from 'react'
-import { portfolioProjectServices, portfolioServiceList, portfolioUrls } from '@portfolio/services'
+import { portfolioServiceList, portfolioUrls } from '@portfolio/services'
 import { AppFrame, ButtonSurface, SectionIntro, SectionPanel } from '@portfolio/ui-shell'
+import { generatedPortfolioProjects } from '../../../../packages/services/src/projects.generated'
 
-const projectDetails = {
-  mooditree: {
-    role: '감정 기록 캘린더 UI',
-    summary: 'Zustand 전역 상태 관리를 도입하고 캘린더-폼 데이터 동기화로 렌더링을 최적화했습니다.',
-    points: ['Zustand', 'State Sync', 'Calendar UI'],
-  },
-  wizletBudget: {
-    role: 'API 연동 협업 가계부',
-    summary: 'React/Vite 화면에서 Spring Boot API와 예산, 지출 데이터 흐름을 연결했습니다.',
-    points: ['REST API', 'Data Flow', 'WebSocket'],
-  },
-  dopacheck: {
-    role: '영수증 분석 라우트 & 보안',
-    summary: 'Flask 라우트로 배달 영수증 분석을 구현하고 CSRF·세션 보안, 모바일 반응형 대응을 맡았습니다.',
-    points: ['Flask', 'CSRF/Session', 'Responsive'],
-  },
-  reviewSentiment: {
-    role: '감성 분석 모델 & 추론 API',
-    summary: 'KLUE-BERT를 파인튜닝하고 FastAPI 기반 추론 API로 서빙했습니다.',
-    points: ['KLUE-BERT', 'Fine-tuning', 'FastAPI'],
-  },
-  musicRecs: {
-    role: '음악 임베딩 추천 파이프라인',
-    summary: '멜-스펙트로그램 특성 추출과 CNN 임베딩 기반 코사인 유사도 추천을 구축했습니다.',
-    points: ['Librosa', 'CNN Embedding', 'Recommendation'],
-  },
-  hajacheck: {
-    role: '랜딩·지도 뷰 & LLM 보고서 체인',
-    summary: '랜딩 페이지와 지도 뷰를 구현하고 LLM 보고서 체인, Grounding Check 대조 모듈을 맡았습니다.',
-    points: ['Map View', 'LLM Report Chain', 'Grounding Check'],
-  },
-} as const
+type GeneratedPortfolioProject = {
+  id: string
+  name: string
+  label: string
+  timelineLabel: string
+  status: string
+  repositoryUrl: string
+  demoUrl: string
+  summary: string
+}
 
-const projectCards = portfolioProjectServices.map((service) => ({
-  id: service.id,
-  title: service.name,
-  href: service.url,
-  repositoryHref: service.repositoryUrl,
-  metric: service.timelineLabel,
-  ...projectDetails[service.id],
+const portfolioProjects: readonly GeneratedPortfolioProject[] = generatedPortfolioProjects
+
+const projectCards = portfolioProjects.map((project) => ({
+  id: project.id,
+  title: project.name,
+  href: project.demoUrl || project.repositoryUrl,
+  repositoryHref: project.repositoryUrl,
+  metric: project.timelineLabel,
+  role: project.label,
+  summary: project.summary,
+  points: [
+    project.status === 'completed' ? '완료' : project.status,
+    ...(project.demoUrl ? ['Live Demo'] : []),
+    ...(project.repositoryUrl ? ['Repository'] : []),
+  ],
 }))
 
 const capabilityDemos = [

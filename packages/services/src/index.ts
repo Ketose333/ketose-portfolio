@@ -9,6 +9,8 @@ export type PortfolioServiceId =
 export type PortfolioProjectServiceId = Exclude<PortfolioServiceId, 'site'>
 export type PortfolioAuthStrategy = 'none' | 'local-session'
 
+export { generatedPortfolioProjects } from './projects.generated'
+
 export const portfolioContactEmail = 'amumalbot4@gmail.com'
 
 export const portfolioLinks = {
