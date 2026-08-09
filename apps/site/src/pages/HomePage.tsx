@@ -1,20 +1,6 @@
 import { useState } from 'react'
-import { portfolioServiceList, portfolioUrls } from '@portfolio/services'
+import { portfolioProjects, portfolioServiceList, portfolioUrls } from '@portfolio/services'
 import { AppFrame, ButtonSurface, SectionIntro, SectionPanel } from '@portfolio/ui-shell'
-import { generatedPortfolioProjects } from '../../../../packages/services/src/projects.generated'
-
-type GeneratedPortfolioProject = {
-  id: string
-  name: string
-  label: string
-  timelineLabel: string
-  status: string
-  repositoryUrl: string
-  demoUrl: string
-  summary: string
-}
-
-const portfolioProjects: readonly GeneratedPortfolioProject[] = generatedPortfolioProjects
 
 const projectCards = portfolioProjects.map((project) => ({
   id: project.id,
