@@ -38,7 +38,7 @@ export const generatedPortfolioProjects = [
     status: "completed",
     repositoryUrl: "https://github.com/Ketose333/review-sentiment",
     demoUrl: "https://review-sentiment-web.vercel.app",
-    summary: "FastAPI API와 Next.js 웹에서 TF-IDF·LSTM·KLUE-BERT 예측과 LIME 설명을 제공하는 리뷰 감성 분석 서비스",
+    summary: "세 모델 감성 분류와 LIME 근거를 제공하는 FastAPI·Next.js 앱",
   },
   {
     id: "music-mood-recs",
