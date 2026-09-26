@@ -22,7 +22,7 @@ export const generatedPortfolioProjects = [
   },
   {
     id: "dopacheck",
-    name: "도파체크",
+    name: "DopaCheck",
     label: "DopaCheck",
     timelineLabel: "2026.06.10 ~ 2026.06.17 (7일)",
     status: "completed",
@@ -34,11 +34,11 @@ export const generatedPortfolioProjects = [
     id: "review-sentiment",
     name: "리뷰 감성 분석",
     label: "review-sentiment",
-    timelineLabel: "2026.06.21 ~ 2026.07.03 (12일)",
+    timelineLabel: "2026.06.21 ~ 2026.09.26 (MVP 12일·이관 4일)",
     status: "completed",
     repositoryUrl: "https://github.com/Ketose333/review-sentiment",
-    demoUrl: "https://nsmc-sentiment.streamlit.app",
-    summary: "KLUE-BERT 감성 분류와 모델 비교를 제공하는 Streamlit 앱",
+    demoUrl: "https://review-sentiment-web.vercel.app",
+    summary: "FastAPI API와 Next.js 웹에서 TF-IDF·LSTM·KLUE-BERT 예측과 LIME 설명을 제공하는 리뷰 감성 분석 서비스",
   },
   {
     id: "music-mood-recs",
@@ -52,7 +52,7 @@ export const generatedPortfolioProjects = [
   },
   {
     id: "hajacheck",
-    name: "하자체크",
+    name: "HajaCheck",
     label: "HajaCheck",
     timelineLabel: "2026.07.09 ~ 2026.08.07 (4주)",
     status: "completed",

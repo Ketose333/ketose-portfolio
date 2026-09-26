@@ -94,10 +94,10 @@ npm run check          # 테마 토큰과 스타일 경계 검사
 | --- | --- | --- |
 | [무디트리](https://mooditree.vercel.app) | 2025.06.27 ~ 2025.07.31 (5주) | completed |
 | [같이가계](https://wizlet-budget.vercel.app) | 2025.10.17 ~ 2025.11.21 (5주) | completed |
-| [도파체크](https://dopacheck.luma200ok.com) | 2026.06.10 ~ 2026.06.17 (7일) | completed |
-| [리뷰 감성 분석](https://nsmc-sentiment.streamlit.app) | 2026.06.21 ~ 2026.07.03 (12일) | completed |
+| [DopaCheck](https://dopacheck.luma200ok.com) | 2026.06.10 ~ 2026.06.17 (7일) | completed |
+| [리뷰 감성 분석](https://review-sentiment-web.vercel.app) | 2026.06.21 ~ 2026.09.26 (MVP 12일·이관 4일) | completed |
 | [음악 감정 추천](https://music-mood-recs.streamlit.app) | 2026.06.25 ~ 2026.07.04 (9일) | completed |
-| [하자체크](https://hajacheck.luma200ok.com) | 2026.07.09 ~ 2026.08.07 (4주) | completed |
+| [HajaCheck](https://hajacheck.luma200ok.com) | 2026.07.09 ~ 2026.08.07 (4주) | completed |
 <!-- PORTFOLIO:WEB-PROJECTS:END -->
 
 <p align="right">(<a href="#readme-top">맨 위로</a>)</p>
